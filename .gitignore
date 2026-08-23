@@ -1,0 +1,53 @@
+# =====================================================
+# AI Business Document Intelligence Platform
+# .gitignore
+# =====================================================
+
+__pycache__/
+*.py[cod]
+*$py.class
+
+venv/
+.venv/
+env/
+ENV/
+
+.env
+.env.*
+!.env.example
+
+.vscode/
+.idea/
+
+.pytest_cache/
+.coverage
+htmlcov/
+
+build/
+dist/
+*.egg-info/
+
+*.log
+
+.DS_Store
+Thumbs.db
+desktop.ini
+
+data/
+qdrant_data/
+uploads/
+
+*.pyc
+*.pyo
+
+*.tmp
+*.temp
+
+.ipynb_checkpoints/
+
+*.db
+*.sqlite3
+
+*.zip
+*.tar
+*.gz
