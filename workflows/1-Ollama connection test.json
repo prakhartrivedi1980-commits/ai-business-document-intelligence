@@ -1,0 +1,90 @@
+{
+  "name": "1-Ollama connection test",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -864,
+        -32
+      ],
+      "id": "34593887-05fe-4e25-b193-2b46af7a9973",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "Explain the docker compose in simple words",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -560,
+        -32
+      ],
+      "id": "1e683310-dcd6-49a9-96ed-dfa2fe0479d3",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": "llama3.1:8b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        -608,
+        176
+      ],
+      "id": "b595fa3f-9c26-4d11-9df5-2357fdc1a231",
+      "name": "Ollama Chat Model",
+      "credentials": {
+        "ollamaApi": {
+          "id": "Q755K9jT7Cb1EteH",
+          "name": "Ollama account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "5c2ab4b8-4552-48e1-a4bd-59c75a6e203f",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "fe35fb04f52b73ced61aff05cf75a315afce35a0442accb9b5a3981ccf63b702"
+  },
+  "nodeGroups": [],
+  "id": "SBB8wtvd6ASNnU4u",
+  "tags": []
+}
