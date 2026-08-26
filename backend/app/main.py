@@ -1,15 +1,23 @@
 from fastapi import FastAPI, UploadFile, File
+from fastapi.middleware.cors import CORSMiddleware
+
 from app.services.pdf_services import PDFService
 from app.services.ai_services import AIService
-from app.schemas.document import DocumentAnalysis
-from fastapi.middleware.cors import CORSMiddleware
+from app.services.rag_service import RAGService
+
+from app.schemas.document import (
+    AnalyzeDocumentResponse,
+    DocumentQuestion,
+    DocumentAnswer,
+)
 
 
 app = FastAPI(
     title="AI Document Intelligence API",
     description="Backend API for AI Document Intelligence Platform",
-    version="1.0.0"
+    version="2.0.0"
 )
+
 
 app.add_middleware(
     CORSMiddleware,
@@ -21,6 +29,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
 @app.get("/")
 def root():
     return {
@@ -29,8 +39,22 @@ def root():
     }
 
 
-@app.post("/extract-text", response_model=DocumentAnalysis)
-async def extract_text(file: UploadFile = File(...)):
+@app.post(
+    "/analyze-document",
+    response_model=AnalyzeDocumentResponse
+)
+async def analyze_document(
+    file: UploadFile = File(...)
+):
+    """
+    Upload and analyze a PDF document.
+
+    Flow:
+    1. Extract text or use OCR fallback
+    2. Run AI document analysis through n8n
+    3. Store document chunks and embeddings in Qdrant
+    4. Return analysis and document_id
+    """
 
     pdf_bytes = await file.read()
 
@@ -39,6 +63,33 @@ async def extract_text(file: UploadFile = File(...)):
         filename=file.filename
     )
 
-    summary = await AIService.summarize(payload)
+    analysis = await AIService.summarize(payload)
 
-    return summary
+    document_id = await RAGService.store_document(
+        text=payload.text,
+        filename=payload.filename
+    )
+
+    return {
+        "document_id": document_id,
+        "analysis": analysis
+    }
+
+
+@app.post(
+    "/ask-document",
+    response_model=DocumentAnswer
+)
+async def ask_document(
+    request: DocumentQuestion
+):
+    """
+    Ask a question about a previously uploaded document.
+    """
+
+    result = await RAGService.answer_question(
+        document_id=request.document_id,
+        question=request.question,
+    )
+
+    return result
