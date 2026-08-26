@@ -1,6 +1,6 @@
 from fastapi import FastAPI, UploadFile, File
-import fitz
-import httpx
+from app.services.pdf_services import PDFService
+from app.services.ai_services import AIService
 
 app = FastAPI(
     title="AI Document Intelligence API",
@@ -22,31 +22,19 @@ async def extract_text(file: UploadFile = File(...)):
     
     pdf_bytes = await file.read()
 
-    document = fitz.open(stream=pdf_bytes, filetype="pdf")
+    payload = PDFService.extract_text(
+            pdf_bytes=pdf_bytes,
+            filename=file.filename
+    )
 
-    extracted_text = ""
-
-    for page in document:
-        extracted_text += page.get_text()
-
-    page_count = len(document)
-    document.close()
-    
-    payload = {
-    "filename": file.filename,
-    "pages": page_count,
-    "text": extracted_text
-    }
-
-    async with httpx.AsyncClient() as client:
+   
+    summary = await AIService.summarize(payload)
+    '''async with httpx.AsyncClient() as client:
 
         response = await client.post(
         "http://localhost:5678/webhook-test/process-document",
         json=payload
-        )
+        )'''
 
-    return { 
-    "pdf_data": payload,
-    "n8n_response": response.json()
-    }
+    return summary
       

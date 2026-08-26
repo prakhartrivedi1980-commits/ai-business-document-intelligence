@@ -1,0 +1,165 @@
+{
+  "name": "04 - AI Processing",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "process-document",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -416,
+        0
+      ],
+      "id": "03b8fe9e-6f45-47e1-9140-575db14d90b9",
+      "name": "Webhook",
+      "webhookId": "1e507e50-a0cd-4c82-95b3-9d0929ae3e44"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "95af6343-5d7c-4cba-afa6-fc1a534d28f3",
+              "name": "document_text",
+              "value": "={{$json.body.text}}",
+              "type": "string"
+            },
+            {
+              "id": "688c5edc-98ad-4c62-ab31-8a9d695f2a6b",
+              "name": "filename",
+              "value": "={{$json.body.filename}}",
+              "type": "string"
+            },
+            {
+              "id": "0c983009-8e84-4f10-ae43-abe0f28870be",
+              "name": "pages",
+              "value": "={{$json.body.pages}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        -144,
+        0
+      ],
+      "id": "0d161cb6-5818-4182-b3ff-f989c5b222fe",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        464,
+        0
+      ],
+      "id": "497cb20a-51ca-4433-b0db-9f3d1ef795e3",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an AI document analyst.\n\nSummarize the following document into exactly 5 concise bullet points.\n\nDocument:\n\n{{$json.document_text}}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        80,
+        0
+      ],
+      "id": "9befc9a5-660d-4d29-b2c5-a7799a0756b8",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": "llama3.1:8b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        -64,
+        208
+      ],
+      "id": "44cf64ba-973a-4c1e-97e3-b9a6a40eb7d1",
+      "name": "Ollama Chat Model",
+      "credentials": {
+        "ollamaApi": {
+          "id": "Q755K9jT7Cb1EteH",
+          "name": "Ollama account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "c0695e5b-0a3b-44c8-ab48-2948a42084e5",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "fe35fb04f52b73ced61aff05cf75a315afce35a0442accb9b5a3981ccf63b702"
+  },
+  "nodeGroups": [],
+  "id": "b88FmWoWopjOrnwz",
+  "tags": []
+}
