@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import "./App.css";
 
 function App() {
@@ -6,15 +6,44 @@ function App() {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [dragActive, setDragActive] = useState(false);
+
+  const fileInputRef = useRef(null);
+
+  const validateAndSetFile = (selectedFile) => {
+    if (!selectedFile) return;
+
+    if (selectedFile.type !== "application/pdf") {
+      setError("Please upload a PDF file only.");
+      setFile(null);
+      setResult(null);
+      return;
+    }
+
+    setFile(selectedFile);
+    setResult(null);
+    setError("");
+  };
 
   const handleFileChange = (event) => {
-    const selectedFile = event.target.files[0];
+    validateAndSetFile(event.target.files[0]);
+  };
 
-    if (selectedFile) {
-      setFile(selectedFile);
-      setResult(null);
-      setError("");
-    }
+  const handleDragOver = (event) => {
+    event.preventDefault();
+    setDragActive(true);
+  };
+
+  const handleDragLeave = () => {
+    setDragActive(false);
+  };
+
+  const handleDrop = (event) => {
+    event.preventDefault();
+    setDragActive(false);
+
+    const droppedFile = event.dataTransfer.files[0];
+    validateAndSetFile(droppedFile);
   };
 
   const handleAnalyze = async () => {
@@ -44,9 +73,22 @@ function App() {
       setResult(data);
     } catch (error) {
       console.error("Analysis error:", error);
-      setError("Unable to analyze the document.");
+      setError(
+        "Unable to analyze the document. Make sure FastAPI, n8n, and Ollama are running."
+      );
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleReset = () => {
+    setFile(null);
+    setResult(null);
+    setError("");
+    setDragActive(false);
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
     }
   };
 
@@ -63,20 +105,44 @@ function App() {
         </header>
 
         <section className="upload-card">
-          <label className="file-upload">
-            <span>Choose PDF</span>
-
+          <div
+            className={`drop-zone ${dragActive ? "drag-active" : ""}`}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            onClick={() => fileInputRef.current?.click()}
+          >
             <input
+              ref={fileInputRef}
               type="file"
               accept="application/pdf"
               onChange={handleFileChange}
+              className="hidden-file-input"
             />
-          </label>
+
+            <div className="upload-icon">↑</div>
+
+            <h3>Drop your PDF here</h3>
+
+            <p>
+              or click to browse your files
+            </p>
+          </div>
 
           {file && (
-            <div className="selected-file">
-              <span>Selected:</span>
-              <strong>{file.name}</strong>
+            <div className="selected-file-card">
+              <div>
+                <span className="file-label">Selected PDF</span>
+                <strong>{file.name}</strong>
+              </div>
+
+              <button
+                className="remove-file-button"
+                onClick={handleReset}
+                type="button"
+              >
+                Remove
+              </button>
             </div>
           )}
 
@@ -113,6 +179,13 @@ function App() {
 
                 <h2>{result.title}</h2>
               </div>
+
+              <button
+                className="reset-button"
+                onClick={handleReset}
+              >
+                Analyze Another Document
+              </button>
             </div>
 
             <div className="result-card">
