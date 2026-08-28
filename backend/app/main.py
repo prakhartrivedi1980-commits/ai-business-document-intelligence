@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.services.pdf_services import PDFService
 from app.services.ai_services import AIService
-from app.services.rag_service import RAGService
+from app.services.rag_services import RAGService
 
 from app.schemas.document import (
     AnalyzeDocumentResponse,
@@ -47,24 +47,21 @@ async def analyze_document(
     file: UploadFile = File(...)
 ):
     """
-    Upload and analyze a PDF document.
-
-    Flow:
-    1. Extract text or use OCR fallback
-    2. Run AI document analysis through n8n
-    3. Store document chunks and embeddings in Qdrant
-    4. Return analysis and document_id
+    Upload, analyze, and index a PDF document.
     """
 
     pdf_bytes = await file.read()
 
+    # Extract normal PDF text or use OCR fallback.
     payload = PDFService.extract_text(
         pdf_bytes=pdf_bytes,
         filename=file.filename
     )
 
+    # Generate structured document analysis through n8n.
     analysis = await AIService.summarize(payload)
 
+    # Chunk, embed, and store the document in Qdrant.
     document_id = await RAGService.store_document(
         text=payload.text,
         filename=payload.filename
@@ -84,12 +81,27 @@ async def ask_document(
     request: DocumentQuestion
 ):
     """
-    Ask a question about a previously uploaded document.
+    Ask a conversation-aware question about
+    an indexed document.
     """
 
     result = await RAGService.answer_question(
         document_id=request.document_id,
         question=request.question,
+        history=request.history,
     )
 
     return result
+
+
+# Temporary debugging endpoint.
+# We can remove this once RAG testing is complete.
+@app.get("/test-search")
+async def test_search(
+    document_id: str,
+    question: str,
+):
+    return await RAGService.search_document(
+        document_id=document_id,
+        question=question,
+    )

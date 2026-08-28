@@ -92,7 +92,6 @@ function App() {
 
       setDocumentId(data.document_id);
       setResult(data.analysis);
-
     } catch (error) {
       console.error("Analysis error:", error);
 
@@ -103,6 +102,10 @@ function App() {
       setLoading(false);
     }
   };
+
+  // ---------------------------------------
+  // RAG 4.2 - Conversation-aware chat
+  // ---------------------------------------
 
   const handleAskQuestion = async () => {
     const trimmedQuestion = question.trim();
@@ -116,7 +119,24 @@ function App() {
       content: trimmedQuestion,
     };
 
-    // Show user's question immediately
+    /*
+      IMPORTANT:
+
+      At this point `messages` contains the PREVIOUS
+      conversation.
+
+      We send those previous messages as `history`
+      to FastAPI.
+
+      The current question is sent separately as `question`.
+    */
+
+    const conversationHistory = messages.map((message) => ({
+      role: message.role,
+      content: message.content,
+    }));
+
+    // Immediately display the user's new question.
     setMessages((previousMessages) => [
       ...previousMessages,
       userMessage,
@@ -131,12 +151,17 @@ function App() {
         "http://127.0.0.1:8000/ask-document",
         {
           method: "POST",
+
           headers: {
             "Content-Type": "application/json",
           },
+
           body: JSON.stringify({
             document_id: documentId,
             question: trimmedQuestion,
+
+            // NEW IN RAG 4.2
+            history: conversationHistory,
           }),
         }
       );
@@ -159,7 +184,6 @@ function App() {
         ...previousMessages,
         assistantMessage,
       ]);
-
     } catch (error) {
       console.error("Chat error:", error);
 
@@ -212,6 +236,8 @@ function App() {
             and chat with your document.
           </p>
         </header>
+
+        {/* UPLOAD SECTION */}
 
         <section className="upload-card">
 
@@ -287,18 +313,21 @@ function App() {
 
         </section>
 
+        {/* LOADING */}
+
         {loading && (
           <section className="loading-card">
 
             <div className="spinner"></div>
 
             <p>
-              AI is analyzing and indexing your
-              document...
+              AI is analyzing and indexing your document...
             </p>
 
           </section>
         )}
+
+        {/* ANALYSIS RESULTS */}
 
         {result && (
           <section className="results">
@@ -324,14 +353,22 @@ function App() {
 
             </div>
 
+            {/* SUMMARY */}
+
             <div className="result-card">
+
               <h3>Summary</h3>
+
               <p>{result.summary}</p>
+
             </div>
 
             <div className="result-grid">
 
+              {/* KEY POINTS */}
+
               <div className="result-card">
+
                 <h3>Key Points</h3>
 
                 {result.key_points?.length > 0 ? (
@@ -347,9 +384,13 @@ function App() {
                 ) : (
                   <p>No key points found.</p>
                 )}
+
               </div>
 
+              {/* IMPORTANT DATES */}
+
               <div className="result-card">
+
                 <h3>Important Dates</h3>
 
                 {result.important_dates?.length > 0 ? (
@@ -370,9 +411,13 @@ function App() {
                 ) : (
                   <p>No important dates found.</p>
                 )}
+
               </div>
 
+              {/* ENTITIES */}
+
               <div className="result-card">
+
                 <h3>Entities</h3>
 
                 {result.entities?.length > 0 ? (
@@ -393,13 +438,18 @@ function App() {
                 ) : (
                   <p>No entities found.</p>
                 )}
+
               </div>
 
+              {/* ACTION ITEMS */}
+
               <div className="result-card">
+
                 <h3>Action Items</h3>
 
                 {result.action_items?.length > 0 ? (
                   <ul>
+
                     {result.action_items.map(
                       (item, index) => (
                         <li key={index}>
@@ -407,13 +457,17 @@ function App() {
                         </li>
                       )
                     )}
+
                   </ul>
                 ) : (
                   <p>No action items found.</p>
                 )}
+
               </div>
 
             </div>
+
+            {/* KEYWORDS */}
 
             <div className="result-card">
 
@@ -447,7 +501,9 @@ function App() {
               <section className="chat-card">
 
                 <div className="chat-header">
+
                   <div>
+
                     <p className="chat-eyebrow">
                       RAG DOCUMENT CHAT
                     </p>
@@ -458,9 +514,13 @@ function App() {
                       Ask questions and receive answers
                       grounded in the uploaded PDF.
                     </p>
+
                   </div>
+
                 </div>
 
+
+                {/* CHAT MESSAGES */}
 
                 <div className="chat-messages">
 
@@ -496,15 +556,21 @@ function App() {
                     >
 
                       <span className="message-role">
+
                         {message.role === "user"
                           ? "You"
                           : "Document AI"}
+
                       </span>
 
                       <p>{message.content}</p>
 
+
+                      {/* RETRIEVED SOURCES */}
+
                       {message.role === "assistant" &&
                         message.sources?.length > 0 && (
+
                           <details className="sources">
 
                             <summary>
@@ -513,23 +579,29 @@ function App() {
 
                             {message.sources.map(
                               (source, sourceIndex) => (
+
                                 <div
                                   className="source-chunk"
                                   key={sourceIndex}
                                 >
                                   {source}
                                 </div>
+
                               )
                             )}
 
                           </details>
+
                         )}
 
                     </div>
                   ))}
 
 
+                  {/* AI THINKING */}
+
                   {chatLoading && (
+
                     <div className="chat-message assistant-message">
 
                       <span className="message-role">
@@ -543,34 +615,45 @@ function App() {
                       </div>
 
                     </div>
+
                   )}
 
                 </div>
 
 
                 {chatError && (
+
                   <p className="error-message">
                     {chatError}
                   </p>
+
                 )}
 
+
+                {/* CHAT INPUT */}
 
                 <div className="chat-input-container">
 
                   <textarea
                     value={question}
+
                     onChange={(event) =>
                       setQuestion(event.target.value)
                     }
+
                     onKeyDown={handleQuestionKeyDown}
+
                     placeholder="Ask something about this document..."
+
                     rows="1"
+
                     disabled={chatLoading}
                   />
 
                   <button
                     className="send-button"
                     onClick={handleAskQuestion}
+
                     disabled={
                       !question.trim() ||
                       chatLoading

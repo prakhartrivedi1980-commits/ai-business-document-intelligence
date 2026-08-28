@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class DocumentPayload(BaseModel):
@@ -38,6 +38,15 @@ class AnalyzeDocumentResponse(BaseModel):
     analysis: DocumentAnalysis
 
 
+class ChatMessage(BaseModel):
+    """
+    One previous message in the document chat.
+    """
+
+    role: str
+    content: str
+
+
 class DocumentQuestion(BaseModel):
     """
     Request body for asking a question
@@ -46,6 +55,7 @@ class DocumentQuestion(BaseModel):
 
     document_id: str
     question: str
+    history: list[ChatMessage] = Field(default_factory=list)
 
 
 class DocumentAnswer(BaseModel):

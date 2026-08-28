@@ -12,46 +12,85 @@ from qdrant_client.models import (
 class RAGService:
     """
     Handles document chunking, embeddings,
-    vector storage, retrieval, and answer generation.
+    vector storage, retrieval, and conversational
+    answer generation.
     """
 
+    # Ollama
     OLLAMA_EMBED_URL = "http://127.0.0.1:11434/api/embeddings"
     OLLAMA_GENERATE_URL = "http://127.0.0.1:11434/api/generate"
 
     EMBEDDING_MODEL = "nomic-embed-text"
     CHAT_MODEL = "llama3.1:8b"
 
+    # Qdrant
     QDRANT_HOST = "127.0.0.1"
     QDRANT_PORT = 6333
 
     COLLECTION_NAME = "documents"
 
+    # Chunking
     CHUNK_SIZE = 800
     CHUNK_OVERLAP = 150
 
     @staticmethod
     def chunk_text(text: str) -> list[str]:
         """
-        Split document text into overlapping chunks.
+        Split document text into paragraph-aware chunks.
         """
 
+        text = text.replace("\r\n", "\n").replace("\r", "\n")
+
+        paragraphs = [
+            paragraph.strip()
+            for paragraph in text.split("\n\n")
+            if paragraph.strip()
+        ]
+
         chunks = []
+        current_chunk = ""
 
-        start = 0
-        text_length = len(text)
+        for paragraph in paragraphs:
 
-        while start < text_length:
-            end = start + RAGService.CHUNK_SIZE
+            if len(paragraph) > RAGService.CHUNK_SIZE:
 
-            chunk = text[start:end].strip()
+                if current_chunk:
+                    chunks.append(current_chunk.strip())
+                    current_chunk = ""
 
-            if chunk:
-                chunks.append(chunk)
+                start = 0
 
-            start += (
-                RAGService.CHUNK_SIZE
-                - RAGService.CHUNK_OVERLAP
-            )
+                while start < len(paragraph):
+                    end = start + RAGService.CHUNK_SIZE
+
+                    piece = paragraph[start:end].strip()
+
+                    if piece:
+                        chunks.append(piece)
+
+                    start += (
+                        RAGService.CHUNK_SIZE
+                        - RAGService.CHUNK_OVERLAP
+                    )
+
+                continue
+
+            if current_chunk:
+                candidate = f"{current_chunk}\n\n{paragraph}"
+            else:
+                candidate = paragraph
+
+            if len(candidate) <= RAGService.CHUNK_SIZE:
+                current_chunk = candidate
+
+            else:
+                if current_chunk:
+                    chunks.append(current_chunk.strip())
+
+                current_chunk = paragraph
+
+        if current_chunk:
+            chunks.append(current_chunk.strip())
 
         return chunks
 
@@ -82,10 +121,8 @@ class RAGService:
         filename: str,
     ) -> str:
         """
-        Chunk document, generate embeddings,
-        and store chunks in Qdrant.
-
-        Returns a unique document_id.
+        Chunk a document, generate embeddings,
+        and store the chunks in Qdrant.
         """
 
         document_id = str(uuid.uuid4())
@@ -168,18 +205,82 @@ class RAGService:
         return document_id
 
     @staticmethod
+    def build_history_text(history: list) -> str:
+        """
+        Convert previous chat messages into readable text.
+        """
+
+        if not history:
+            return ""
+
+        lines = []
+
+        for message in history:
+            role = getattr(message, "role", "")
+            content = getattr(message, "content", "")
+
+            if role == "user":
+                label = "User"
+            elif role == "assistant":
+                label = "Assistant"
+            else:
+                continue
+
+            lines.append(f"{label}: {content}")
+
+        return "\n".join(lines)
+
+    @staticmethod
+    def build_search_query(
+        question: str,
+        history: list,
+    ) -> str:
+        """
+        Build a retrieval query using recent conversation
+        context so follow-up questions are easier to resolve.
+        """
+
+        if not history:
+            return question
+
+        # Only use the latest few messages for retrieval.
+        recent_history = history[-4:]
+
+        history_text = RAGService.build_history_text(
+            recent_history
+        )
+
+        return f"""
+Conversation:
+{history_text}
+
+Current question:
+{question}
+""".strip()
+
+    @staticmethod
     async def search_document(
         document_id: str,
         question: str,
+        history: list | None = None,
         limit: int = 3,
-    ) -> list[str]:
+    ) -> list[dict]:
         """
-        Retrieve the most relevant chunks
-        for a question from one document.
+        Search a specific document for relevant chunks.
+
+        Conversation history is included in the retrieval
+        query when available.
         """
 
+        history = history or []
+
+        search_query = RAGService.build_search_query(
+            question=question,
+            history=history,
+        )
+
         question_embedding = await RAGService.create_embedding(
-            question
+            search_query
         )
 
         client = QdrantClient(
@@ -204,29 +305,43 @@ class RAGService:
             with_payload=True,
         )
 
-        chunks = []
+        matches = []
 
         for point in results.points:
+
             if point.payload and "text" in point.payload:
-                chunks.append(
-                    point.payload["text"]
+                matches.append(
+                    {
+                        "text": point.payload["text"],
+                        "score": point.score,
+                        "chunk_index": point.payload.get(
+                            "chunk_index"
+                        ),
+                        "filename": point.payload.get(
+                            "filename"
+                        ),
+                    }
                 )
 
-        return chunks
+        return matches
 
     @staticmethod
     async def answer_question(
         document_id: str,
         question: str,
+        history: list | None = None,
     ) -> dict:
         """
-        Retrieve relevant document chunks
-        and generate a grounded answer using Ollama.
+        Retrieve relevant chunks and generate
+        a conversation-aware grounded answer.
         """
+
+        history = history or []
 
         chunks = await RAGService.search_document(
             document_id=document_id,
             question=question,
+            history=history,
         )
 
         if not chunks:
@@ -238,25 +353,55 @@ class RAGService:
                 "sources": [],
             }
 
-        context = "\n\n---\n\n".join(chunks)
+        context = "\n\n---\n\n".join(
+            chunk["text"]
+            for chunk in chunks
+        )
+
+        conversation = RAGService.build_history_text(
+            history[-6:]
+        )
+
+        if not conversation:
+            conversation = "No previous conversation."
 
         prompt = f"""
-You are an AI assistant answering questions about a document.
+You are a conversational document question-answering assistant.
 
-Answer the user's question using ONLY the provided document context.
+Answer using only the retrieved DOCUMENT CONTEXT.
 
-Rules:
+You are also given the previous CONVERSATION so you can understand
+follow-up questions such as:
+- "Explain the second one."
+- "What about the first?"
+- "When did that happen?"
+- "Tell me more about it."
+
+Important rules:
+- Conversation history is only for understanding what the user refers to.
+- Factual answers must still be supported by the document context.
+- Do not treat a previous assistant answer as proof if the document
+  context does not support it.
+- Read all retrieved context before answering.
 - Do not use outside knowledge.
-- Do not invent information.
-- If the answer is not present in the context, say:
+- Do not invent facts.
+- OCR text may contain formatting errors, logos, headers, IDs,
+  signatures, and unrelated branding.
+- If information is ambiguous, explain the ambiguity briefly.
+- If the answer truly cannot be determined from the document context,
+  respond exactly:
   "I could not find that information in the document."
 - Keep the answer clear and concise.
+
+PREVIOUS CONVERSATION:
+
+{conversation}
 
 DOCUMENT CONTEXT:
 
 {context}
 
-USER QUESTION:
+CURRENT USER QUESTION:
 
 {question}
 
@@ -279,5 +424,8 @@ ANSWER:
 
         return {
             "answer": data["response"].strip(),
-            "sources": chunks,
+            "sources": [
+                chunk["text"]
+                for chunk in chunks
+            ],
         }
