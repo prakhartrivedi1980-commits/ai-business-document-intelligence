@@ -1,46 +1,31 @@
+from typing import Any
 from pydantic import BaseModel, Field
 
 
 class DocumentPayload(BaseModel):
     """
-    Standard document payload exchanged
-    between backend services.
+    Normalized representation of any uploaded document.
     """
 
     filename: str
-    pages: int
+    file_type: str
     text: str
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
 
-class DocumentAnalysis(BaseModel):
+class DocumentUploadResponse(BaseModel):
     """
-    Structured AI analysis returned by the
-    document intelligence workflow.
-    """
-
-    document_type: str
-    title: str
-    summary: str
-    key_points: list[str]
-    entities: list[str]
-    important_dates: list[str]
-    action_items: list[str]
-    keywords: list[str]
-
-
-class AnalyzeDocumentResponse(BaseModel):
-    """
-    Final response returned after a document
-    is analyzed and stored for RAG.
+    Response returned after extraction and indexing.
     """
 
     document_id: str
-    analysis: DocumentAnalysis
-
-
+    filename: str
+    file_type: str
+    status: str
+    metadata: dict[str, Any] = Field(default_factory=dict)
 class ChatMessage(BaseModel):
     """
-    One previous message in the document chat.
+    Previous message from a document conversation.
     """
 
     role: str
@@ -49,8 +34,8 @@ class ChatMessage(BaseModel):
 
 class DocumentQuestion(BaseModel):
     """
-    Request body for asking a question
-    about a previously uploaded document.
+    Request for asking a question about
+    an indexed document.
     """
 
     document_id: str
@@ -60,9 +45,25 @@ class DocumentQuestion(BaseModel):
 
 class DocumentAnswer(BaseModel):
     """
-    Response returned by the RAG
-    question-answering endpoint.
+    RAG answer returned to the frontend.
     """
 
     answer: str
     sources: list[str]
+
+class DocumentSummaryResponse(BaseModel):
+    """
+    On-demand document summary response.
+    """
+
+    document_id: str
+    summary: str
+
+
+class DocumentKeyPointsResponse(BaseModel):
+    """
+    On-demand key-points response.
+    """
+
+    document_id: str
+    key_points: list[str]

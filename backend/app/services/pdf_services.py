@@ -74,10 +74,13 @@ class PDFService:
             )
 
             return DocumentPayload(
-                filename=filename,
-                pages=len(document),
-                text=extracted_text
-            )
+    filename=filename,
+    file_type="pdf",
+    text=extracted_text,
+    metadata={
+        "page_count": page_count
+    }
+)
 
         finally:
             document.close()

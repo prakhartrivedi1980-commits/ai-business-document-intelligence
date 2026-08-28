@@ -1,21 +1,22 @@
 from fastapi import FastAPI, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.services.pdf_services import PDFService
-from app.services.ai_services import AIService
+from app.services.document_services import DocumentService
 from app.services.rag_services import RAGService
 
 from app.schemas.document import (
-    AnalyzeDocumentResponse,
+    DocumentUploadResponse,
     DocumentQuestion,
     DocumentAnswer,
+    DocumentSummaryResponse,
+    DocumentKeyPointsResponse,
 )
 
 
 app = FastAPI(
     title="AI Document Intelligence API",
     description="Backend API for AI Document Intelligence Platform",
-    version="2.0.0"
+    version="3.0.0"
 )
 
 
@@ -40,36 +41,34 @@ def root():
 
 
 @app.post(
-    "/analyze-document",
-    response_model=AnalyzeDocumentResponse
+    "/documents/upload",
+    response_model=DocumentUploadResponse
 )
-async def analyze_document(
+async def upload_document(
     file: UploadFile = File(...)
 ):
     """
-    Upload, analyze, and index a PDF document.
+    Upload, extract, and index a document.
+
+    Uploading does NOT automatically run
+    summarization or key-point extraction.
     """
 
-    pdf_bytes = await file.read()
+    # Detect document type and extract its content.
+    payload = await DocumentService.extract_document(file)
 
-    # Extract normal PDF text or use OCR fallback.
-    payload = PDFService.extract_text(
-        pdf_bytes=pdf_bytes,
-        filename=file.filename
-    )
-
-    # Generate structured document analysis through n8n.
-    analysis = await AIService.summarize(payload)
-
-    # Chunk, embed, and store the document in Qdrant.
+    # Store extracted content in Qdrant for RAG.
     document_id = await RAGService.store_document(
         text=payload.text,
-        filename=payload.filename
+        filename=payload.filename,
     )
 
     return {
         "document_id": document_id,
-        "analysis": analysis
+        "filename": payload.filename,
+        "file_type": payload.file_type,
+        "pages": payload.pages,
+        "status": "ready",
     }
 
 
@@ -81,8 +80,8 @@ async def ask_document(
     request: DocumentQuestion
 ):
     """
-    Ask a conversation-aware question about
-    an indexed document.
+    Ask a conversation-aware question
+    about an indexed document.
     """
 
     result = await RAGService.answer_question(
@@ -93,9 +92,49 @@ async def ask_document(
 
     return result
 
+@app.post(
+    "/documents/{document_id}/summary",
+    response_model=DocumentSummaryResponse,
+)
+async def summarize_document(
+    document_id: str,
+):
+    """
+    Generate a summary only when requested.
+    """
 
-# Temporary debugging endpoint.
-# We can remove this once RAG testing is complete.
+    summary = await RAGService.summarize_document(
+        document_id=document_id
+    )
+
+    return {
+        "document_id": document_id,
+        "summary": summary,
+    }
+
+
+@app.post(
+    "/documents/{document_id}/key-points",
+    response_model=DocumentKeyPointsResponse,
+)
+async def document_key_points(
+    document_id: str,
+):
+    """
+    Generate key points only when requested.
+    """
+
+    key_points = await RAGService.get_key_points(
+        document_id=document_id
+    )
+
+    return {
+        "document_id": document_id,
+        "key_points": key_points,
+    }
+
+# Temporary RAG debugging endpoint.
+# We will remove this later.
 @app.get("/test-search")
 async def test_search(
     document_id: str,
