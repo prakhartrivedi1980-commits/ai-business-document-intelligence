@@ -31,10 +31,9 @@ class DocumentService:
         if not file.filename:
             raise HTTPException(
                 status_code=400,
-                detail="Uploaded file has no filename."
+                detail="Uploaded file has no filename.",
             )
 
-        # Use extension as our primary routing mechanism.
         extension = Path(file.filename).suffix.lower()
 
         file_type = DocumentService.SUPPORTED_EXTENSIONS.get(
@@ -47,7 +46,7 @@ class DocumentService:
                 detail=(
                     f"Unsupported file type: {extension}. "
                     "Currently supported: PDF, XLSX, CSV."
-                )
+                ),
             )
 
         file_bytes = await file.read()
@@ -55,7 +54,7 @@ class DocumentService:
         if not file_bytes:
             raise HTTPException(
                 status_code=400,
-                detail="Uploaded file is empty."
+                detail="Uploaded file is empty.",
             )
 
         try:
@@ -65,16 +64,9 @@ class DocumentService:
             # -------------------------
 
             if file_type == "pdf":
-                payload = PDFService.extract_text(
+                return PDFService.extract_text(
                     pdf_bytes=file_bytes,
                     filename=file.filename,
-                )
-
-                return DocumentPayload(
-                    filename=payload.filename,
-                    pages=payload.pages,
-                    text=payload.text,
-                    file_type="pdf",
                 )
 
             # -------------------------
@@ -114,5 +106,5 @@ class DocumentService:
 
         raise HTTPException(
             status_code=415,
-            detail="Unsupported document type."
+            detail="Unsupported document type.",
         )

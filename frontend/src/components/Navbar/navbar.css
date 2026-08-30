@@ -1,0 +1,172 @@
+.navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+
+  z-index: 100;
+
+  padding: 18px 28px;
+}
+
+.navbar__inner {
+  width: 100%;
+  max-width: var(--max-width);
+  height: 64px;
+
+  margin: 0 auto;
+  padding: 0 10px 0 18px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  background: rgba(10, 10, 15, 0.68);
+
+  border: 1px solid var(--border);
+  border-radius: 18px;
+
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+
+  box-shadow:
+    0 12px 40px rgba(0, 0, 0, 0.25),
+    inset 0 1px rgba(255, 255, 255, 0.03);
+}
+
+/* Brand */
+
+.navbar__brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.navbar__logo {
+  width: 34px;
+  height: 34px;
+
+  display: grid;
+  place-items: center;
+
+  border-radius: 10px;
+
+  background: var(--gradient-primary);
+
+  box-shadow:
+    0 0 25px rgba(124, 92, 255, 0.3);
+}
+
+.navbar__name {
+  font-family: "Manrope", sans-serif;
+
+  font-size: 18px;
+  font-weight: 800;
+
+  letter-spacing: -0.5px;
+}
+
+.navbar__name span {
+  color: var(--primary-light);
+}
+
+/* Navigation */
+
+.navbar__links {
+  display: flex;
+  align-items: center;
+  gap: 34px;
+}
+
+.navbar__links a {
+  position: relative;
+
+  color: var(--text-secondary);
+
+  font-size: 14px;
+  font-weight: 500;
+
+  transition: color 0.25s ease;
+}
+
+.navbar__links a:hover {
+  color: white;
+}
+
+.navbar__links a::after {
+  content: "";
+
+  position: absolute;
+
+  left: 0;
+  bottom: -7px;
+
+  width: 0;
+  height: 1px;
+
+  background: var(--primary-light);
+
+  transition: width 0.25s ease;
+}
+
+.navbar__links a:hover::after {
+  width: 100%;
+}
+
+/* CTA */
+
+.navbar__cta {
+  height: 44px;
+
+  padding: 0 18px;
+
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  border-radius: 12px;
+
+  background: #f4f4f7;
+  color: #111116;
+
+  font-size: 13px;
+  font-weight: 700;
+
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+.navbar__cta svg {
+  transition: transform 0.25s ease;
+}
+
+.navbar__cta:hover {
+  transform: translateY(-2px);
+
+  box-shadow:
+    0 8px 30px rgba(255, 255, 255, 0.12);
+}
+
+.navbar__cta:hover svg {
+  transform: translate(2px, -2px);
+}
+
+/* Responsive */
+
+@media (max-width: 800px) {
+  .navbar {
+    padding: 14px;
+  }
+
+  .navbar__links {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .navbar__cta {
+    padding: 0 13px;
+    font-size: 12px;
+  }
+}

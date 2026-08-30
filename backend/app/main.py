@@ -64,12 +64,12 @@ async def upload_document(
     )
 
     return {
-        "document_id": document_id,
-        "filename": payload.filename,
-        "file_type": payload.file_type,
-        "pages": payload.pages,
-        "status": "ready",
-    }
+    "document_id": document_id,
+    "filename": payload.filename,
+    "file_type": payload.file_type,
+    "status": "ready",
+    "metadata": payload.metadata,
+}
 
 
 @app.post(

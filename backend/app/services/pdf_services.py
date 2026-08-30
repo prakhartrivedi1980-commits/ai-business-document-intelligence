@@ -33,14 +33,19 @@ class PDFService:
 
         document = pymupdf.open(
             stream=pdf_bytes,
-            filetype="pdf"
+            filetype="pdf",
         )
 
         extracted_pages = []
+        ocr_page_count = 0
 
         try:
-            for page_number, page in enumerate(document, start=1):
+            page_count = document.page_count
 
+            for page_number, page in enumerate(
+                document,
+                start=1,
+            ):
                 page_text = page.get_text("text").strip()
 
                 if len(page_text) < PDFService.OCR_TEXT_THRESHOLD:
@@ -49,11 +54,13 @@ class PDFService:
                         "little/no embedded text found. Running OCR..."
                     )
 
+                    ocr_page_count += 1
+
                     matrix = pymupdf.Matrix(2, 2)
 
                     pixmap = page.get_pixmap(
                         matrix=matrix,
-                        alpha=False
+                        alpha=False,
                     )
 
                     image_bytes = pixmap.tobytes("png")
@@ -64,23 +71,26 @@ class PDFService:
 
                     page_text = pytesseract.image_to_string(
                         image,
-                        lang="eng"
+                        lang="eng",
                     ).strip()
 
                 extracted_pages.append(page_text)
 
             extracted_text = "\n\n".join(
-                text for text in extracted_pages if text
+                text
+                for text in extracted_pages
+                if text
             )
 
             return DocumentPayload(
-    filename=filename,
-    file_type="pdf",
-    text=extracted_text,
-    metadata={
-        "page_count": page_count
-    }
-)
+                filename=filename,
+                file_type="pdf",
+                text=extracted_text,
+                metadata={
+                    "page_count": page_count,
+                    "ocr_page_count": ocr_page_count,
+                },
+            )
 
         finally:
             document.close()

@@ -1,6 +1,9 @@
 import { useRef, useState } from "react";
 import "./App.css";
 
+import Navbar from "./components/Navbar/Navbar.jsx";
+import Hero from "./components/Hero/Hero.jsx";
+
 const API_BASE_URL = "http://127.0.0.1:8000";
 
 function App() {
@@ -355,34 +358,26 @@ function App() {
   };
 
   return (
+  <>
+    {/* PREMIUM LANDING PAGE */}
+
+    <Navbar />
+
+    <Hero />
+
+
+    {/* EXISTING APPLICATION */}
+
     <main className="app">
       <div className="container">
-
-        {/* HEADER */}
-
-        <header className="hero">
-
-          <p className="eyebrow">
-            AI DOCUMENT INTELLIGENCE
-          </p>
-
-          <h1>
-            Understand your documents with AI
-          </h1>
-
-          <p className="subtitle">
-            Upload a document, chat with its
-            contents, generate a summary, or
-            extract key points on demand.
-          </p>
-
-        </header>
-
 
         {/* UPLOAD */}
 
         {!documentInfo && (
-          <section className="upload-card">
+          <section
+            id="upload"
+            className="upload-card"
+          >
 
             <div
               className={`drop-zone ${
@@ -481,6 +476,8 @@ function App() {
           </section>
         )}
 
+
+        {/* ERROR */}
 
         {error && (
           <p className="error-message">
@@ -594,7 +591,7 @@ function App() {
             </div>
 
 
-            {/* SUMMARY - ONLY AFTER CLICK */}
+            {/* SUMMARY */}
 
             {(summary || summaryLoading) && (
 
@@ -628,7 +625,7 @@ function App() {
             )}
 
 
-            {/* KEY POINTS - ONLY AFTER CLICK */}
+            {/* KEY POINTS */}
 
             {(keyPoints.length > 0 ||
               keyPointsLoading) && (
@@ -871,7 +868,7 @@ function App() {
 
       </div>
     </main>
-  );
+  </>
+);
 }
-
 export default App;

@@ -1,0 +1,107 @@
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap");
+
+:root {
+  font-family: "DM Sans", sans-serif;
+
+  --background: #07070a;
+  --background-soft: #0c0c11;
+
+  --surface: rgba(18, 18, 25, 0.72);
+  --surface-hover: rgba(25, 25, 35, 0.82);
+
+  --border: rgba(255, 255, 255, 0.08);
+  --border-hover: rgba(255, 255, 255, 0.16);
+
+  --text-primary: #f8f8fc;
+  --text-secondary: #9d9daa;
+  --text-muted: #686875;
+
+  --primary: #8b5cf6;
+  --primary-light: #a78bfa;
+  --secondary: #4f7cff;
+
+  --gradient-primary: linear-gradient(
+    135deg,
+    #9d6cff 0%,
+    #6c63ff 50%,
+    #4f8cff 100%
+  );
+
+  --max-width: 1240px;
+
+  color: var(--text-primary);
+  background: var(--background);
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+
+  background:
+    radial-gradient(
+      circle at 50% -20%,
+      rgba(109, 76, 255, 0.16),
+      transparent 38%
+    ),
+    var(--background);
+
+  color: var(--text-primary);
+
+  overflow-x: hidden;
+}
+
+body,
+button,
+input,
+textarea {
+  font-family: "DM Sans", sans-serif;
+}
+
+button {
+  border: none;
+}
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+::selection {
+  background: rgba(139, 92, 246, 0.35);
+  color: white;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #08080b;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #292932;
+  border-radius: 20px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #3b3b46;
+}

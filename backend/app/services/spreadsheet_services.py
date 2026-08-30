@@ -162,7 +162,7 @@ class SpreadsheetService:
             file_type="csv",
             text=extracted_text,
             metadata={
-                "row_count": len(rows),
+                "row_count": max(len(rows)-1,0),
                 "column_count": max_columns,
             },
         )
