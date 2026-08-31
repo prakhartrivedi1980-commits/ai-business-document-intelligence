@@ -3,46 +3,90 @@ import "./App.css";
 
 import Navbar from "./components/Navbar/Navbar.jsx";
 import Hero from "./components/Hero/Hero.jsx";
+import UploadZone from "./components/UploadZone/UploadZone.jsx";
+import DocumentInfo from "./components/DocumentInfo/DocumentInfo.jsx";
+import Summary from "./components/Summary/Summary.jsx";
+import KeyPoints from "./components/KeyPoints/KeyPoints.jsx";
+import Chat from "./components/Chat/Chat.jsx";
+import AIActions from "./components/AIActions/AIActions.jsx";
+import Features from "./components/Features/Features.jsx";
+import HowItWorks from "./components/HowItWorks/HowItWorks.jsx";
+import SupportedFiles from "./components/SupportedFiles/SupportedFiles.jsx";
+import FinalCTA from "./components/FinalCTA/FinalCTA.jsx";
+import Footer from "./components/Footer/Footer.jsx";
+
 
 const API_BASE_URL = "http://127.0.0.1:8000";
 
+
 function App() {
-  // -----------------------------
-  // Document state
-  // -----------------------------
+  // =========================================================
+  // DOCUMENT STATE
+  // =========================================================
 
   const [file, setFile] = useState(null);
-  const [documentInfo, setDocumentInfo] = useState(null);
-  const [documentId, setDocumentId] = useState(null);
 
-  const [uploadLoading, setUploadLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [dragActive, setDragActive] = useState(false);
+  const [documentInfo, setDocumentInfo] =
+    useState(null);
 
-  // -----------------------------
-  // On-demand AI operations
-  // -----------------------------
+  const [documentId, setDocumentId] =
+    useState(null);
 
-  const [summary, setSummary] = useState("");
-  const [summaryLoading, setSummaryLoading] = useState(false);
+  const [uploadLoading, setUploadLoading] =
+    useState(false);
 
-  const [keyPoints, setKeyPoints] = useState([]);
-  const [keyPointsLoading, setKeyPointsLoading] = useState(false);
+  const [error, setError] =
+    useState("");
 
-  // -----------------------------
-  // RAG chat state
-  // -----------------------------
+  const [dragActive, setDragActive] =
+    useState(false);
 
-  const [question, setQuestion] = useState("");
-  const [messages, setMessages] = useState([]);
-  const [chatLoading, setChatLoading] = useState(false);
-  const [chatError, setChatError] = useState("");
+
+  // =========================================================
+  // ON-DEMAND AI OPERATIONS
+  // =========================================================
+
+  const [summary, setSummary] =
+    useState("");
+
+  const [summaryLoading, setSummaryLoading] =
+    useState(false);
+
+
+  const [keyPoints, setKeyPoints] =
+    useState([]);
+
+  const [keyPointsLoading, setKeyPointsLoading] =
+    useState(false);
+
+
+  // =========================================================
+  // RAG CHAT STATE
+  // =========================================================
+
+  const [question, setQuestion] =
+    useState("");
+
+  const [messages, setMessages] =
+    useState([]);
+
+  const [chatLoading, setChatLoading] =
+    useState(false);
+
+  const [chatError, setChatError] =
+    useState("");
+
+
+  // =========================================================
+  // REFERENCES
+  // =========================================================
 
   const fileInputRef = useRef(null);
 
-  // -----------------------------
-  // File selection
-  // -----------------------------
+
+  // =========================================================
+  // RESET DOCUMENT RESULTS
+  // =========================================================
 
   const resetDocumentResults = () => {
     setDocumentInfo(null);
@@ -57,70 +101,118 @@ function App() {
     setChatError("");
   };
 
+
+  // =========================================================
+  // FILE VALIDATION
+  // =========================================================
+
   const validateAndSetFile = (selectedFile) => {
     if (!selectedFile) {
       return;
     }
 
-    // Backend currently supports PDF only.
-    // We will expand this in Sprint 5.4.
-    if (selectedFile.type !== "application/pdf") {
+    const allowedExtensions = [
+      ".pdf",
+      ".xlsx",
+      ".csv",
+    ];
+
+    const filename =
+      selectedFile.name.toLowerCase();
+
+    const isSupported =
+      allowedExtensions.some(
+        (extension) =>
+          filename.endsWith(extension)
+      );
+
+    if (!isSupported) {
       setError(
-        "PDF is currently supported. More document formats are coming next."
+        "Unsupported file type. Please upload a PDF, XLSX, or CSV document."
       );
 
       setFile(null);
+
       resetDocumentResults();
+
       return;
     }
 
     setFile(selectedFile);
+
     setError("");
 
     resetDocumentResults();
   };
 
+
+  // =========================================================
+  // FILE INPUT
+  // =========================================================
+
   const handleFileChange = (event) => {
-    validateAndSetFile(event.target.files[0]);
+    const selectedFile =
+      event.target.files?.[0];
+
+    validateAndSetFile(selectedFile);
   };
+
+
+  // =========================================================
+  // DRAG AND DROP
+  // =========================================================
 
   const handleDragOver = (event) => {
     event.preventDefault();
+
     setDragActive(true);
   };
+
 
   const handleDragLeave = () => {
     setDragActive(false);
   };
+
 
   const handleDrop = (event) => {
     event.preventDefault();
 
     setDragActive(false);
 
-    const droppedFile = event.dataTransfer.files[0];
+    const droppedFile =
+      event.dataTransfer.files?.[0];
 
     validateAndSetFile(droppedFile);
   };
 
-  // -----------------------------
-  // Upload + index
-  // -----------------------------
+
+  // =========================================================
+  // UPLOAD + INDEX DOCUMENT
+  // =========================================================
 
   const handleUpload = async () => {
-    if (!file || uploadLoading) {
+    if (
+      !file ||
+      uploadLoading
+    ) {
       return;
     }
 
-    const formData = new FormData();
+    const formData =
+      new FormData();
 
-    formData.append("file", file);
+    formData.append(
+      "file",
+      file
+    );
 
     try {
       setUploadLoading(true);
+
       setError("");
 
       resetDocumentResults();
+
 
       const response = await fetch(
         `${API_BASE_URL}/documents/upload`,
@@ -130,47 +222,69 @@ function App() {
         }
       );
 
+
       if (!response.ok) {
         throw new Error(
           `Upload failed with status ${response.status}`
         );
       }
 
-      const data = await response.json();
 
-      console.log("Document upload response:", data);
+      const data =
+        await response.json();
 
-      setDocumentId(data.document_id);
+
+      console.log(
+        "Document upload response:",
+        data
+      );
+
+
+      setDocumentId(
+        data.document_id
+      );
+
 
       setDocumentInfo({
         filename: data.filename,
         fileType: data.file_type,
-        pages: data.pages,
+        metadata: data.metadata || {},
         status: data.status,
       });
+
     } catch (uploadError) {
-      console.error("Upload error:", uploadError);
+      console.error(
+        "Upload error:",
+        uploadError
+      );
 
       setError(
         "Unable to process the document. Make sure FastAPI, Ollama, and Qdrant are running."
       );
+
     } finally {
       setUploadLoading(false);
     }
   };
 
-  // -----------------------------
-  // On-demand summary
-  // -----------------------------
+
+  // =========================================================
+  // ON-DEMAND SUMMARY
+  // =========================================================
 
   const handleSummarize = async () => {
-    if (!documentId || summaryLoading) {
+    if (
+      !documentId ||
+      summaryLoading
+    ) {
       return;
     }
 
     try {
       setSummaryLoading(true);
+
       setError("");
+
 
       const response = await fetch(
         `${API_BASE_URL}/documents/${documentId}/summary`,
@@ -179,38 +293,55 @@ function App() {
         }
       );
 
+
       if (!response.ok) {
         throw new Error(
           `Summary request failed with status ${response.status}`
         );
       }
 
-      const data = await response.json();
 
-      setSummary(data.summary);
+      const data =
+        await response.json();
+
+
+      setSummary(
+        data.summary || ""
+      );
+
     } catch (summaryError) {
-      console.error("Summary error:", summaryError);
+      console.error(
+        "Summary error:",
+        summaryError
+      );
 
       setError(
         "Unable to summarize this document. Please try again."
       );
+
     } finally {
       setSummaryLoading(false);
     }
   };
 
-  // -----------------------------
-  // On-demand key points
-  // -----------------------------
+
+  // =========================================================
+  // ON-DEMAND KEY POINTS
+  // =========================================================
 
   const handleKeyPoints = async () => {
-    if (!documentId || keyPointsLoading) {
+    if (
+      !documentId ||
+      keyPointsLoading
+    ) {
       return;
     }
 
     try {
       setKeyPointsLoading(true);
+
       setError("");
+
 
       const response = await fetch(
         `${API_BASE_URL}/documents/${documentId}/key-points`,
@@ -219,32 +350,46 @@ function App() {
         }
       );
 
+
       if (!response.ok) {
         throw new Error(
           `Key-points request failed with status ${response.status}`
         );
       }
 
-      const data = await response.json();
 
-      setKeyPoints(data.key_points || []);
+      const data =
+        await response.json();
+
+
+      setKeyPoints(
+        data.key_points || []
+      );
+
     } catch (keyPointError) {
-      console.error("Key points error:", keyPointError);
+      console.error(
+        "Key points error:",
+        keyPointError
+      );
 
       setError(
         "Unable to generate key points. Please try again."
       );
+
     } finally {
       setKeyPointsLoading(false);
     }
   };
 
-  // -----------------------------
-  // Conversation-aware RAG chat
-  // -----------------------------
+
+  // =========================================================
+  // CONVERSATION-AWARE RAG CHAT
+  // =========================================================
 
   const handleAskQuestion = async () => {
-    const trimmedQuestion = question.trim();
+    const trimmedQuestion =
+      question.trim();
+
 
     if (
       !trimmedQuestion ||
@@ -254,26 +399,40 @@ function App() {
       return;
     }
 
-    const conversationHistory = messages.map(
-      (message) => ({
-        role: message.role,
-        content: message.content,
-      })
-    );
+
+    /*
+     * Send only messages that already existed
+     * before the current question.
+     */
+    const conversationHistory =
+      messages.map(
+        (message) => ({
+          role: message.role,
+          content: message.content,
+        })
+      );
+
 
     const userMessage = {
       role: "user",
       content: trimmedQuestion,
     };
 
-    setMessages((previousMessages) => [
-      ...previousMessages,
-      userMessage,
-    ]);
+
+    setMessages(
+      (previousMessages) => [
+        ...previousMessages,
+        userMessage,
+      ]
+    );
+
 
     setQuestion("");
+
     setChatError("");
+
     setChatLoading(true);
+
 
     try {
       const response = await fetch(
@@ -282,16 +441,23 @@ function App() {
           method: "POST",
 
           headers: {
-            "Content-Type": "application/json",
+            "Content-Type":
+              "application/json",
           },
 
           body: JSON.stringify({
-            document_id: documentId,
-            question: trimmedQuestion,
-            history: conversationHistory,
+            document_id:
+              documentId,
+
+            question:
+              trimmedQuestion,
+
+            history:
+              conversationHistory,
           }),
         }
       );
+
 
       if (!response.ok) {
         throw new Error(
@@ -299,31 +465,49 @@ function App() {
         );
       }
 
-      const data = await response.json();
+
+      const data =
+        await response.json();
+
 
       const assistantMessage = {
         role: "assistant",
-        content: data.answer,
-        sources: data.sources || [],
+
+        content:
+          data.answer,
+
+        sources:
+          data.sources || [],
       };
 
-      setMessages((previousMessages) => [
-        ...previousMessages,
-        assistantMessage,
-      ]);
+
+      setMessages(
+        (previousMessages) => [
+          ...previousMessages,
+          assistantMessage,
+        ]
+      );
+
     } catch (chatRequestError) {
       console.error(
         "Chat error:",
         chatRequestError
       );
 
+
       setChatError(
         "Unable to answer the question. Please try again."
       );
+
     } finally {
       setChatLoading(false);
     }
   };
+
+
+  // =========================================================
+  // CHAT KEYBOARD HANDLING
+  // =========================================================
 
   const handleQuestionKeyDown = (event) => {
     if (
@@ -336,539 +520,148 @@ function App() {
     }
   };
 
-  // -----------------------------
-  // Reset workspace
-  // -----------------------------
+
+  // =========================================================
+  // RESET WORKSPACE
+  // =========================================================
 
   const handleReset = () => {
     setFile(null);
 
     resetDocumentResults();
 
+
     setSummaryLoading(false);
+
     setKeyPointsLoading(false);
+
     setChatLoading(false);
 
+
     setError("");
+
     setDragActive(false);
+
 
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
   };
 
+
+  // =========================================================
+  // UI
+  // =========================================================
+
   return (
-  <>
-    {/* PREMIUM LANDING PAGE */}
+    <>
+      <Navbar />
 
-    <Navbar />
-
-    <Hero />
+      <Hero />
 
 
-    {/* EXISTING APPLICATION */}
+      {/* MAIN PRODUCT EXPERIENCE */}
 
-    <main className="app">
-      <div className="container">
+      <main className="app">
+        <div className="container">
 
-        {/* UPLOAD */}
+          {!documentInfo && (
+            <UploadZone
+              file={file}
+              dragActive={dragActive}
+              uploadLoading={uploadLoading}
+              fileInputRef={fileInputRef}
+              handleFileChange={handleFileChange}
+              handleDragOver={handleDragOver}
+              handleDragLeave={handleDragLeave}
+              handleDrop={handleDrop}
+              handleUpload={handleUpload}
+              handleReset={handleReset}
+            />
+          )}
 
-        {!documentInfo && (
-          <section
-            id="upload"
-            className="upload-card"
-          >
 
+          {error && (
             <div
-              className={`drop-zone ${
-                dragActive
-                  ? "drag-active"
-                  : ""
-              }`}
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={handleDrop}
-              onClick={() =>
-                fileInputRef.current?.click()
-              }
+              className="error-message"
+              role="alert"
             >
+              {error}
+            </div>
+          )}
 
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="application/pdf"
-                onChange={handleFileChange}
-                className="hidden-file-input"
+
+          {documentInfo && documentId && (
+            <section className="workspace">
+
+              <DocumentInfo
+                documentInfo={documentInfo}
+                handleReset={handleReset}
               />
 
-              <div className="upload-icon">
-                ↑
-              </div>
 
-              <h3>
-                Drop your document here
-              </h3>
-
-              <p>
-                or click to browse
-              </p>
-
-              <span className="supported-types">
-                PDF supported currently
-              </span>
-
-            </div>
-
-
-            {file && (
-              <div className="selected-file-card">
-
-                <div>
-
-                  <span className="file-label">
-                    Selected document
-                  </span>
-
-                  <strong>
-                    {file.name}
-                  </strong>
-
-                </div>
-
-                <button
-                  className="remove-file-button"
-                  onClick={handleReset}
-                  type="button"
-                >
-                  Remove
-                </button>
-
-              </div>
-            )}
-
-
-            <button
-              className="analyze-button"
-              onClick={handleUpload}
-              disabled={
-                !file ||
-                uploadLoading
-              }
-            >
-              {uploadLoading
-                ? "Processing Document..."
-                : "Upload Document"}
-            </button>
-
-
-            {uploadLoading && (
-              <div className="inline-loading">
-
-                <div className="spinner"></div>
-
-                <span>
-                  Extracting and indexing...
-                </span>
-
-              </div>
-            )}
-
-          </section>
-        )}
-
-
-        {/* ERROR */}
-
-        {error && (
-          <p className="error-message">
-            {error}
-          </p>
-        )}
-
-
-        {/* DOCUMENT WORKSPACE */}
-
-        {documentInfo && documentId && (
-
-          <section className="workspace">
-
-            {/* DOCUMENT INFO */}
-
-            <div className="document-bar">
-
-              <div className="document-main-info">
-
-                <div className="document-icon">
-                  DOC
-                </div>
-
-                <div>
-
-                  <span className="file-label">
-                    Current document
-                  </span>
-
-                  <h2>
-                    {documentInfo.filename}
-                  </h2>
-
-                  <div className="document-meta">
-
-                    <span>
-                      {documentInfo.fileType.toUpperCase()}
-                    </span>
-
-                    <span>
-                      {documentInfo.pages}{" "}
-                      {documentInfo.pages === 1
-                        ? "page"
-                        : "pages"}
-                    </span>
-
-                    <span className="ready-status">
-                      ● Ready
-                    </span>
-
-                  </div>
-
-                </div>
-
-              </div>
-
-
-              <button
-                className="reset-button"
-                onClick={handleReset}
-              >
-                Upload Another
-              </button>
-
-            </div>
-
-
-            {/* AI ACTIONS */}
-
-            <div className="action-panel">
-
-              <div>
-
-                <p className="chat-eyebrow">
-                  AI ACTIONS
-                </p>
-
-                <h3>
-                  What would you like to do?
-                </h3>
-
-              </div>
-
-
-              <div className="action-buttons">
-
-                <button
-                  className="action-button"
-                  onClick={handleSummarize}
-                  disabled={summaryLoading}
-                >
-                  {summaryLoading
-                    ? "Summarizing..."
-                    : "Summarize"}
-                </button>
-
-
-                <button
-                  className="action-button"
-                  onClick={handleKeyPoints}
-                  disabled={keyPointsLoading}
-                >
-                  {keyPointsLoading
-                    ? "Extracting..."
-                    : "Key Points"}
-                </button>
-
-              </div>
-
-            </div>
-
-
-            {/* SUMMARY */}
-
-            {(summary || summaryLoading) && (
-
-              <section className="result-card">
-
-                <div className="section-heading">
-
-                  <h3>
-                    Summary
-                  </h3>
-
-                  {summaryLoading && (
-                    <div className="spinner small-spinner"></div>
-                  )}
-
-                </div>
-
-
-                {summary ? (
-                  <p>
-                    {summary}
-                  </p>
-                ) : (
-                  <p>
-                    Generating summary...
-                  </p>
-                )}
-
-              </section>
-
-            )}
-
-
-            {/* KEY POINTS */}
-
-            {(keyPoints.length > 0 ||
-              keyPointsLoading) && (
-
-              <section className="result-card">
-
-                <div className="section-heading">
-
-                  <h3>
-                    Key Points
-                  </h3>
-
-                  {keyPointsLoading && (
-                    <div className="spinner small-spinner"></div>
-                  )}
-
-                </div>
-
-
-                {keyPoints.length > 0 ? (
-
-                  <ul>
-
-                    {keyPoints.map(
-                      (point, index) => (
-
-                        <li key={index}>
-                          {point}
-                        </li>
-
-                      )
-                    )}
-
-                  </ul>
-
-                ) : (
-
-                  <p>
-                    Extracting key points...
-                  </p>
-
-                )}
-
-              </section>
-
-            )}
-
-
-            {/* CHAT */}
-
-            <section className="chat-card">
-
-              <div className="chat-header">
-
-                <div>
-
-                  <p className="chat-eyebrow">
-                    DOCUMENT CHAT
-                  </p>
-
-                  <h3>
-                    Chat with your document
-                  </h3>
-
-                  <p>
-                    Ask questions grounded in
-                    the uploaded content.
-                  </p>
-
-                </div>
-
-              </div>
-
-
-              <div className="chat-messages">
-
-                {messages.length === 0 && (
-
-                  <div className="chat-empty">
-
-                    <div className="chat-icon">
-                      ✦
-                    </div>
-
-                    <h4>
-                      Ask anything about this document
-                    </h4>
-
-                    <p>
-                      You can ask about specific facts,
-                      sections, dates, people, values,
-                      or request an explanation.
-                    </p>
-
-                  </div>
-
-                )}
-
-
-                {messages.map(
-                  (message, index) => (
-
-                    <div
-                      key={index}
-                      className={`chat-message ${
-                        message.role === "user"
-                          ? "user-message"
-                          : "assistant-message"
-                      }`}
-                    >
-
-                      <span className="message-role">
-
-                        {message.role === "user"
-                          ? "You"
-                          : "Document AI"}
-
-                      </span>
-
-
-                      <p>
-                        {message.content}
-                      </p>
-
-
-                      {message.role ===
-                        "assistant" &&
-                        message.sources?.length >
-                          0 && (
-
-                          <details className="sources">
-
-                            <summary>
-                              View retrieved source
-                            </summary>
-
-
-                            {message.sources.map(
-                              (
-                                source,
-                                sourceIndex
-                              ) => (
-
-                                <div
-                                  className="source-chunk"
-                                  key={
-                                    sourceIndex
-                                  }
-                                >
-                                  {source}
-                                </div>
-
-                              )
-                            )}
-
-                          </details>
-
-                        )}
-
-                    </div>
-
-                  )
-                )}
-
-
-                {chatLoading && (
-
-                  <div className="chat-message assistant-message">
-
-                    <span className="message-role">
-                      Document AI
-                    </span>
-
-                    <div className="typing-indicator">
-                      <span></span>
-                      <span></span>
-                      <span></span>
-                    </div>
-
-                  </div>
-
-                )}
-
-              </div>
-
-
-              {chatError && (
-                <p className="error-message">
-                  {chatError}
-                </p>
+              <AIActions
+                summary={summary}
+                summaryLoading={summaryLoading}
+                keyPoints={keyPoints}
+                keyPointsLoading={keyPointsLoading}
+                handleSummarize={handleSummarize}
+                handleKeyPoints={handleKeyPoints}
+              />
+
+
+              {(summary || summaryLoading) && (
+                <Summary
+                  summary={summary}
+                  summaryLoading={summaryLoading}
+                  handleSummarize={handleSummarize}
+                />
               )}
 
 
-              <div className="chat-input-container">
-
-                <textarea
-                  value={question}
-                  onChange={(event) =>
-                    setQuestion(
-                      event.target.value
-                    )
-                  }
-                  onKeyDown={
-                    handleQuestionKeyDown
-                  }
-                  placeholder="Ask anything about this document..."
-                  rows="1"
-                  disabled={chatLoading}
-                />
+              {(keyPoints.length > 0 ||
+                keyPointsLoading) && (
+                  <KeyPoints
+                    keyPoints={keyPoints}
+                    keyPointsLoading={keyPointsLoading}
+                    handleKeyPoints={handleKeyPoints}
+                  />
+                )}
 
 
-                <button
-                  className="send-button"
-                  onClick={
-                    handleAskQuestion
-                  }
-                  disabled={
-                    !question.trim() ||
-                    chatLoading
-                  }
-                >
-                  {chatLoading
-                    ? "Thinking..."
-                    : "Ask"}
-                </button>
-
-              </div>
-
-
-              <p className="chat-hint">
-                Press Enter to send ·
-                Shift + Enter for a new line
-              </p>
+              <Chat
+                question={question}
+                setQuestion={setQuestion}
+                messages={messages}
+                chatLoading={chatLoading}
+                chatError={chatError}
+                handleAskQuestion={handleAskQuestion}
+                handleQuestionKeyDown={
+                  handleQuestionKeyDown
+                }
+              />
 
             </section>
+          )}
 
-          </section>
+        </div>
+      </main>
 
-        )}
 
-      </div>
-    </main>
-  </>
-);
+      {/* LANDING PAGE CONTENT */}
+
+      <Features />
+
+      <HowItWorks />
+
+      <SupportedFiles />
+
+      <FinalCTA />
+
+      <Footer />
+    </>
+  );
 }
+
+
 export default App;

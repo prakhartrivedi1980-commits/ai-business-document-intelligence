@@ -1,0 +1,356 @@
+/* =========================================================
+   PREMIUM KEY POINTS
+========================================================= */
+
+.premium-keypoints {
+  position: relative;
+
+  width: 100%;
+  padding: 25px;
+
+  overflow: hidden;
+
+  border: 1px solid var(--border);
+  border-radius: 19px;
+
+  background:
+    radial-gradient(
+      circle at 100% 0%,
+      rgba(79, 124, 255, 0.06),
+      transparent 35%
+    ),
+    rgba(14, 14, 20, 0.82);
+
+  box-shadow:
+    0 18px 50px rgba(0, 0, 0, 0.2),
+    inset 0 1px rgba(255, 255, 255, 0.035);
+}
+
+
+/* =========================================================
+   HEADER
+========================================================= */
+
+.premium-keypoints__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+
+  margin-bottom: 22px;
+}
+
+.premium-keypoints__title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.premium-keypoints__icon {
+  width: 40px;
+  height: 40px;
+
+  flex-shrink: 0;
+
+  display: grid;
+  place-items: center;
+
+  border: 1px solid rgba(96, 165, 250, 0.16);
+  border-radius: 11px;
+
+  background: rgba(79, 124, 255, 0.08);
+
+  color: #82aaff;
+}
+
+.premium-keypoints__title > div:last-child {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.premium-keypoints__title span {
+  color: #82aaff;
+
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 1.4px;
+}
+
+.premium-keypoints__title h3 {
+  margin: 0;
+
+  color: var(--text-primary);
+
+  font-family: "Manrope", sans-serif;
+  font-size: 17px;
+  font-weight: 700;
+}
+
+
+/* =========================================================
+   REGENERATE
+========================================================= */
+
+.premium-keypoints__regenerate {
+  min-height: 37px;
+
+  padding: 0 12px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+
+  border: 1px solid var(--border);
+  border-radius: 9px;
+
+  background: rgba(255, 255, 255, 0.025);
+
+  color: var(--text-secondary);
+
+  font-size: 10px;
+  font-weight: 700;
+
+  cursor: pointer;
+
+  transition:
+    transform 0.2s ease,
+    color 0.2s ease,
+    background 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.premium-keypoints__regenerate svg {
+  transition: transform 0.4s ease;
+}
+
+.premium-keypoints__regenerate:hover {
+  transform: translateY(-2px);
+
+  border-color: rgba(96, 165, 250, 0.22);
+
+  background: rgba(79, 124, 255, 0.06);
+
+  color: #a8c3ff;
+}
+
+.premium-keypoints__regenerate:hover svg {
+  transform: rotate(-90deg);
+}
+
+
+/* =========================================================
+   KEY POINT LIST
+========================================================= */
+
+.premium-keypoints__list {
+  display: flex;
+  flex-direction: column;
+}
+
+.premium-keypoint {
+  padding: 17px 4px;
+
+  display: grid;
+  grid-template-columns: 42px 1fr;
+  gap: 15px;
+
+  border-bottom: 1px solid var(--border);
+
+  transition:
+    background 0.22s ease,
+    padding 0.22s ease;
+}
+
+.premium-keypoint:first-child {
+  padding-top: 5px;
+}
+
+.premium-keypoint:last-child {
+  padding-bottom: 3px;
+
+  border-bottom: none;
+}
+
+.premium-keypoint:hover {
+  padding-left: 9px;
+  padding-right: 9px;
+
+  background: rgba(255, 255, 255, 0.012);
+}
+
+.premium-keypoint__number {
+  width: 34px;
+  height: 28px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 1px solid rgba(139, 92, 246, 0.12);
+  border-radius: 8px;
+
+  background: rgba(139, 92, 246, 0.045);
+
+  color: #9484c7;
+
+  font-family: "Manrope", sans-serif;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+
+.premium-keypoint p {
+  margin: 2px 0 0;
+
+  color: #b4b4c1;
+
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+
+/* =========================================================
+   LOADING
+========================================================= */
+
+.premium-keypoints__loading {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.premium-keypoints__skeleton {
+  min-height: 60px;
+
+  padding: 10px 4px;
+
+  display: grid;
+  grid-template-columns: 42px 1fr;
+  gap: 15px;
+}
+
+.premium-keypoints__skeleton-number {
+  width: 34px;
+  height: 28px;
+
+  border-radius: 8px;
+
+  background: rgba(255, 255, 255, 0.045);
+
+  animation: keypoint-pulse 1.4s ease-in-out infinite;
+}
+
+.premium-keypoints__skeleton-content {
+  padding-top: 3px;
+
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.premium-keypoints__skeleton-content span {
+  display: block;
+
+  width: 94%;
+  height: 8px;
+
+  border-radius: 20px;
+
+  background: rgba(255, 255, 255, 0.045);
+
+  animation: keypoint-pulse 1.4s ease-in-out infinite;
+}
+
+.premium-keypoints__skeleton-content span:last-child {
+  width: 65%;
+}
+
+@keyframes keypoint-pulse {
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+
+/* =========================================================
+   THINKING
+========================================================= */
+
+.premium-keypoints__thinking {
+  margin-top: 5px;
+
+  display: flex;
+  align-items: center;
+  gap: 7px;
+
+  color: var(--text-muted);
+
+  font-size: 9px;
+}
+
+.premium-keypoints__thinking > span {
+  width: 6px;
+  height: 6px;
+
+  border-radius: 50%;
+
+  background: #82aaff;
+
+  box-shadow:
+    0 0 10px rgba(79, 124, 255, 0.65);
+
+  animation:
+    keypoints-thinking 1.3s ease-in-out infinite;
+}
+
+@keyframes keypoints-thinking {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(0.8);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+@media (max-width: 560px) {
+  .premium-keypoints {
+    padding: 20px;
+  }
+
+  .premium-keypoints__header {
+    align-items: flex-start;
+  }
+
+  .premium-keypoints__regenerate {
+    padding: 0 9px;
+
+    font-size: 0;
+  }
+
+  .premium-keypoints__regenerate svg {
+    width: 15px;
+    height: 15px;
+  }
+
+  .premium-keypoint {
+    grid-template-columns: 36px 1fr;
+
+    gap: 10px;
+  }
+}

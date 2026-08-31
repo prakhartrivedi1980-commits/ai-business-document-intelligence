@@ -1,0 +1,405 @@
+/* =========================================================
+   AI ACTIONS
+========================================================= */
+
+.ai-actions {
+  width: 100%;
+
+  padding: 25px;
+
+  border: 1px solid var(--border);
+  border-radius: 20px;
+
+  background:
+    radial-gradient(
+      circle at 0% 0%,
+      rgba(139, 92, 246, 0.055),
+      transparent 35%
+    ),
+    rgba(14, 14, 20, 0.82);
+
+  box-shadow:
+    0 20px 55px rgba(0, 0, 0, 0.2),
+    inset 0 1px rgba(255, 255, 255, 0.035);
+}
+
+
+/* =========================================================
+   HEADING
+========================================================= */
+
+.ai-actions__heading {
+  margin-bottom: 20px;
+}
+
+.ai-actions__eyebrow {
+  margin-bottom: 7px;
+
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  color: var(--primary-light);
+
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+}
+
+.ai-actions__heading h3 {
+  margin: 0;
+
+  color: var(--text-primary);
+
+  font-family: "Manrope", sans-serif;
+  font-size: 19px;
+  font-weight: 700;
+}
+
+.ai-actions__heading p {
+  margin: 6px 0 0;
+
+  color: var(--text-muted);
+
+  font-size: 10px;
+  line-height: 1.6;
+}
+
+
+/* =========================================================
+   ACTION GRID
+========================================================= */
+
+.ai-actions__grid {
+  display: grid;
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+
+  gap: 12px;
+}
+
+
+/* =========================================================
+   ACTION CARD
+========================================================= */
+
+.ai-action-card {
+  position: relative;
+
+  min-height: 215px;
+
+  padding: 19px;
+
+  display: flex;
+  flex-direction: column;
+
+  overflow: hidden;
+
+  text-align: left;
+
+  border: 1px solid rgba(139, 92, 246, 0.13);
+  border-radius: 15px;
+
+  background:
+    radial-gradient(
+      circle at 0% 0%,
+      rgba(139, 92, 246, 0.08),
+      transparent 40%
+    ),
+    rgba(255, 255, 255, 0.018);
+
+  color: var(--text-primary);
+
+  cursor: pointer;
+
+  transition:
+    transform 0.25s ease,
+    border-color 0.25s ease,
+    background 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+.ai-action-card::before {
+  content: "";
+
+  position: absolute;
+
+  width: 130px;
+  height: 130px;
+
+  top: -80px;
+  right: -70px;
+
+  border-radius: 50%;
+
+  background: rgba(139, 92, 246, 0.12);
+
+  filter: blur(45px);
+
+  opacity: 0;
+
+  transition: opacity 0.3s ease;
+
+  pointer-events: none;
+}
+
+.ai-action-card:hover:not(:disabled) {
+  transform: translateY(-4px);
+
+  border-color: rgba(167, 139, 250, 0.3);
+
+  background:
+    radial-gradient(
+      circle at 0% 0%,
+      rgba(139, 92, 246, 0.13),
+      transparent 45%
+    ),
+    rgba(255, 255, 255, 0.025);
+
+  box-shadow:
+    0 16px 40px rgba(70, 45, 150, 0.12);
+}
+
+.ai-action-card:hover::before {
+  opacity: 1;
+}
+
+.ai-action-card:disabled {
+  cursor: wait;
+}
+
+
+/* =========================================================
+   BLUE VARIANT
+========================================================= */
+
+.ai-action-card--blue {
+  border-color: rgba(79, 124, 255, 0.13);
+
+  background:
+    radial-gradient(
+      circle at 0% 0%,
+      rgba(79, 124, 255, 0.075),
+      transparent 40%
+    ),
+    rgba(255, 255, 255, 0.018);
+}
+
+.ai-action-card--blue::before {
+  background: rgba(79, 124, 255, 0.13);
+}
+
+.ai-action-card--blue:hover:not(:disabled) {
+  border-color: rgba(96, 165, 250, 0.28);
+
+  background:
+    radial-gradient(
+      circle at 0% 0%,
+      rgba(79, 124, 255, 0.12),
+      transparent 45%
+    ),
+    rgba(255, 255, 255, 0.025);
+
+  box-shadow:
+    0 16px 40px rgba(50, 80, 180, 0.1);
+}
+
+
+/* =========================================================
+   CARD TOP
+========================================================= */
+
+.ai-action-card__top {
+  position: relative;
+  z-index: 2;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ai-action-card__icon {
+  width: 42px;
+  height: 42px;
+
+  display: grid;
+  place-items: center;
+
+  border: 1px solid rgba(167, 139, 250, 0.15);
+  border-radius: 11px;
+
+  background: rgba(139, 92, 246, 0.08);
+
+  color: var(--primary-light);
+}
+
+.ai-action-card--blue
+  .ai-action-card__icon {
+  border-color: rgba(96, 165, 250, 0.15);
+
+  background: rgba(79, 124, 255, 0.08);
+
+  color: #82aaff;
+}
+
+.ai-action-card__arrow {
+  color: #565663;
+
+  transition:
+    color 0.22s ease,
+    transform 0.22s ease;
+}
+
+.ai-action-card:hover:not(:disabled)
+  .ai-action-card__arrow {
+  transform: translateX(4px);
+
+  color: var(--primary-light);
+}
+
+.ai-action-card--blue:hover:not(:disabled)
+  .ai-action-card__arrow {
+  color: #82aaff;
+}
+
+
+/* =========================================================
+   CARD CONTENT
+========================================================= */
+
+.ai-action-card__content {
+  position: relative;
+  z-index: 2;
+
+  margin-top: 18px;
+}
+
+.ai-action-card__content > span {
+  display: block;
+
+  margin-bottom: 5px;
+
+  color: #897bb4;
+
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 1.2px;
+}
+
+.ai-action-card--blue
+  .ai-action-card__content > span {
+  color: #708cc8;
+}
+
+.ai-action-card__content h4 {
+  margin: 0;
+
+  color: var(--text-primary);
+
+  font-family: "Manrope", sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.ai-action-card__content p {
+  margin: 7px 0 0;
+
+  max-width: 400px;
+
+  color: var(--text-muted);
+
+  font-size: 9px;
+  line-height: 1.65;
+}
+
+
+/* =========================================================
+   STATUS
+========================================================= */
+
+.ai-action-card__status {
+  position: relative;
+  z-index: 2;
+
+  margin-top: auto;
+  padding-top: 16px;
+
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  color: #62626e;
+
+  font-size: 8px;
+  font-weight: 700;
+}
+
+.ai-action-card__complete {
+  width: 6px;
+  height: 6px;
+
+  border-radius: 50%;
+
+  background: #6ddd91;
+
+  box-shadow:
+    0 0 8px rgba(109, 221, 145, 0.55);
+}
+
+
+/* =========================================================
+   LOADER
+========================================================= */
+
+.ai-action-card__loader {
+  width: 11px;
+  height: 11px;
+
+  border: 2px solid rgba(167, 139, 250, 0.2);
+  border-top-color: var(--primary-light);
+  border-radius: 50%;
+
+  animation:
+    ai-action-spin 0.7s linear infinite;
+}
+
+.ai-action-card--blue
+  .ai-action-card__loader {
+  border-color: rgba(96, 165, 250, 0.2);
+  border-top-color: #82aaff;
+}
+
+@keyframes ai-action-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+@media (max-width: 700px) {
+  .ai-actions {
+    padding: 20px;
+  }
+
+  .ai-actions__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ai-action-card {
+    min-height: 200px;
+  }
+}
+
+@media (max-width: 480px) {
+  .ai-actions {
+    padding: 15px;
+  }
+
+  .ai-action-card {
+    padding: 16px;
+  }
+}
