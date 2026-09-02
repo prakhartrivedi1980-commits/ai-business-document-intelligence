@@ -1,10 +1,12 @@
 from pathlib import Path
 
-from fastapi import UploadFile, HTTPException
+from fastapi import HTTPException, UploadFile
 
+from app.schemas.document import DocumentPayload
+from app.services.docx_services import DOCXService
 from app.services.pdf_services import PDFService
 from app.services.spreadsheet_services import SpreadsheetService
-from app.schemas.document import DocumentPayload
+from app.services.text_services import TextService
 
 
 class DocumentService:
@@ -15,6 +17,8 @@ class DocumentService:
 
     SUPPORTED_EXTENSIONS = {
         ".pdf": "pdf",
+        ".docx": "docx",
+        ".txt":"txt",
         ".xlsx": "xlsx",
         ".csv": "csv",
     }
@@ -34,10 +38,14 @@ class DocumentService:
                 detail="Uploaded file has no filename.",
             )
 
-        extension = Path(file.filename).suffix.lower()
+        extension = Path(
+            file.filename
+        ).suffix.lower()
 
-        file_type = DocumentService.SUPPORTED_EXTENSIONS.get(
-            extension
+        file_type = (
+            DocumentService
+            .SUPPORTED_EXTENSIONS
+            .get(extension)
         )
 
         if not file_type:
@@ -45,7 +53,8 @@ class DocumentService:
                 status_code=415,
                 detail=(
                     f"Unsupported file type: {extension}. "
-                    "Currently supported: PDF, XLSX, CSV."
+                    "Currently supported: "
+                    "PDF, DOCX, TXT, XLSX, CSV."
                 ),
             )
 
@@ -59,9 +68,9 @@ class DocumentService:
 
         try:
 
-            # -------------------------
+            # =================================================
             # PDF
-            # -------------------------
+            # =================================================
 
             if file_type == "pdf":
                 return PDFService.extract_text(
@@ -69,9 +78,29 @@ class DocumentService:
                     filename=file.filename,
                 )
 
-            # -------------------------
-            # Excel
-            # -------------------------
+            # =================================================
+            # DOCX
+            # =================================================
+
+            if file_type == "docx":
+                return DOCXService.extract_docx(
+                    file_bytes=file_bytes,
+                    filename=file.filename,
+                )
+
+            # =================================================
+            # TXT
+            # =================================================
+
+            if file_type == "txt":
+                return TextService.extract_txt(
+                   file_bytes=file_bytes,
+                   filename=file.filename,
+                )
+
+            # =================================================
+            # XLSX
+            # =================================================
 
             if file_type == "xlsx":
                 return SpreadsheetService.extract_xlsx(
@@ -79,9 +108,9 @@ class DocumentService:
                     filename=file.filename,
                 )
 
-            # -------------------------
+            # =================================================
             # CSV
-            # -------------------------
+            # =================================================
 
             if file_type == "csv":
                 return SpreadsheetService.extract_csv(
