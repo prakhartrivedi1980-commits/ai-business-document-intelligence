@@ -121,9 +121,29 @@
   display: grid;
 
   grid-template-columns:
-    repeat(3, minmax(0, 1fr));
+    repeat(6, minmax(0, 1fr));
 
   gap: 14px;
+}
+
+
+/*
+   Desktop layout:
+
+   PDF   DOCX   TXT
+      XLSX   CSV
+*/
+
+.file-type-card {
+  grid-column: span 2;
+}
+
+.file-type-card:nth-child(4) {
+  grid-column: 2 / span 2;
+}
+
+.file-type-card:nth-child(5) {
+  grid-column: 4 / span 2;
 }
 
 
@@ -205,16 +225,38 @@
 
 
 /* =========================================================
-   ACCENT COLORS
+   ACCENT GLOWS
 ========================================================= */
+
+/* PDF */
 
 .file-type-card--purple::before {
   background: #8b5cf6;
 }
 
+
+/* DOCX */
+
+.file-type-card--violet::before {
+  background: #a855f7;
+}
+
+
+/* TXT */
+
+.file-type-card--cyan::before {
+  background: #22d3ee;
+}
+
+
+/* XLSX */
+
 .file-type-card--green::before {
   background: #34d399;
 }
+
+
+/* CSV */
 
 .file-type-card--blue::before {
   background: #4f7cff;
@@ -250,7 +292,56 @@
     rgba(139, 92, 246, 0.08);
 
   color: var(--primary-light);
+
+  transition:
+    transform 0.25s ease,
+    background 0.25s ease,
+    border-color 0.25s ease;
 }
+
+.file-type-card:hover
+  .file-type-card__icon {
+  transform:
+    translateY(-3px)
+    rotate(-2deg);
+}
+
+
+/* =========================================================
+   DOCX ICON
+========================================================= */
+
+.file-type-card--violet
+  .file-type-card__icon {
+  border-color:
+    rgba(168, 85, 247, 0.16);
+
+  background:
+    rgba(168, 85, 247, 0.07);
+
+  color: #c084fc;
+}
+
+
+/* =========================================================
+   TXT ICON
+========================================================= */
+
+.file-type-card--cyan
+  .file-type-card__icon {
+  border-color:
+    rgba(34, 211, 238, 0.15);
+
+  background:
+    rgba(34, 211, 238, 0.065);
+
+  color: #67e8f9;
+}
+
+
+/* =========================================================
+   XLSX ICON
+========================================================= */
 
 .file-type-card--green
   .file-type-card__icon {
@@ -263,6 +354,11 @@
   color: #6ee7b7;
 }
 
+
+/* =========================================================
+   CSV ICON
+========================================================= */
+
 .file-type-card--blue
   .file-type-card__icon {
   border-color:
@@ -273,6 +369,11 @@
 
   color: #82aaff;
 }
+
+
+/* =========================================================
+   EXTENSION BADGE
+========================================================= */
 
 .file-type-card__extension {
   padding: 6px 8px;
@@ -316,15 +417,38 @@
   letter-spacing: 1.3px;
 }
 
+
+/* DOCX */
+
+.file-type-card--violet
+  .file-type-card__label {
+  color: #a978cf;
+}
+
+
+/* TXT */
+
+.file-type-card--cyan
+  .file-type-card__label {
+  color: #5aa9b7;
+}
+
+
+/* XLSX */
+
 .file-type-card--green
   .file-type-card__label {
   color: #63aa82;
 }
 
+
+/* CSV */
+
 .file-type-card--blue
   .file-type-card__label {
   color: #708cc8;
 }
+
 
 .file-type-card__content h3 {
   margin: 0;
@@ -374,7 +498,8 @@
   font-weight: 600;
 }
 
-.file-type-card__capabilities div > span {
+.file-type-card__capabilities
+  div > span {
   width: 5px;
   height: 5px;
 
@@ -389,6 +514,35 @@
     rgba(139, 92, 246, 0.5);
 }
 
+
+/* DOCX */
+
+.file-type-card--violet
+  .file-type-card__capabilities
+  div > span {
+  background: #a855f7;
+
+  box-shadow:
+    0 0 7px
+    rgba(168, 85, 247, 0.45);
+}
+
+
+/* TXT */
+
+.file-type-card--cyan
+  .file-type-card__capabilities
+  div > span {
+  background: #22d3ee;
+
+  box-shadow:
+    0 0 7px
+    rgba(34, 211, 238, 0.45);
+}
+
+
+/* XLSX */
+
 .file-type-card--green
   .file-type-card__capabilities
   div > span {
@@ -398,6 +552,9 @@
     0 0 7px
     rgba(52, 211, 153, 0.45);
 }
+
+
+/* CSV */
 
 .file-type-card--blue
   .file-type-card__capabilities
@@ -474,7 +631,8 @@
   color: var(--primary-light);
 }
 
-.supported-files__ocr > div:last-child {
+.supported-files__ocr
+  > div:last-child {
   min-width: 0;
 }
 
@@ -513,38 +671,83 @@
 
 
 /* =========================================================
-   RESPONSIVE
+   RESPONSIVE — TABLET
 ========================================================= */
 
-@media (max-width: 900px) {
+@media (max-width: 1000px) {
+
   .supported-files__grid {
-    grid-template-columns: 1fr;
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
   }
+
+
+  /*
+     Reset the special desktop placement.
+  */
+
+  .file-type-card,
+  .file-type-card:nth-child(4),
+  .file-type-card:nth-child(5) {
+    grid-column: auto;
+  }
+
+
+  /*
+     Five cards means the final card would sit
+     alone. Let it span the complete final row.
+  */
+
+  .file-type-card:last-child {
+    grid-column: 1 / -1;
+  }
+
 
   .file-type-card {
     min-height: 330px;
   }
 }
 
+
+/* =========================================================
+   RESPONSIVE — MOBILE
+========================================================= */
+
 @media (max-width: 650px) {
+
   .supported-files {
     padding:
       90px 16px;
   }
 
+
   .supported-files__heading {
     margin-bottom: 40px;
   }
 
+
   .supported-files__heading h2 {
     letter-spacing: -2px;
   }
+
+
+  .supported-files__grid {
+    grid-template-columns: 1fr;
+  }
+
+
+  .file-type-card,
+  .file-type-card:last-child {
+    grid-column: auto;
+  }
+
 
   .file-type-card {
     min-height: 310px;
 
     padding: 20px;
   }
+
 
   .supported-files__ocr {
     align-items: flex-start;
@@ -553,7 +756,13 @@
   }
 }
 
+
+/* =========================================================
+   RESPONSIVE — SMALL MOBILE
+========================================================= */
+
 @media (max-width: 450px) {
+
   .supported-files__ocr {
     flex-direction: column;
   }

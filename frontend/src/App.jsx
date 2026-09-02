@@ -113,6 +113,8 @@ function App() {
 
     const allowedExtensions = [
       ".pdf",
+      ".docx",
+      ".txt",
       ".xlsx",
       ".csv",
     ];
@@ -128,7 +130,7 @@ function App() {
 
     if (!isSupported) {
       setError(
-        "Unsupported file type. Please upload a PDF, XLSX, or CSV document."
+        "Unsupported file type. Please upload a PDF, DOCX, TXT, XLSX, or CSV document."
       );
 
       setFile(null);

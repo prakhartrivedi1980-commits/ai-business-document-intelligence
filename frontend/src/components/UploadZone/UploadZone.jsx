@@ -8,7 +8,9 @@ import {
 } from "lucide-react";
 
 import { motion } from "motion/react";
+
 import "./UploadZone.css";
+
 
 function UploadZone({
   file,
@@ -22,6 +24,11 @@ function UploadZone({
   handleUpload,
   handleReset,
 }) {
+
+  // =========================================================
+  // FILE ICON
+  // =========================================================
+
   const getFileIcon = () => {
     if (!file) {
       return <UploadCloud size={30} />;
@@ -32,12 +39,22 @@ function UploadZone({
       .pop()
       ?.toLowerCase();
 
-    if (extension === "xlsx" || extension === "csv") {
-      return <FileSpreadsheet size={26} />;
+    if (
+      extension === "xlsx" ||
+      extension === "csv"
+    ) {
+      return (
+        <FileSpreadsheet size={26} />
+      );
     }
 
     return <FileText size={26} />;
   };
+
+
+  // =========================================================
+  // FILE SIZE
+  // =========================================================
 
   const formatFileSize = (bytes) => {
     if (!bytes) {
@@ -45,17 +62,32 @@ function UploadZone({
     }
 
     if (bytes < 1024 * 1024) {
-      return `${(bytes / 1024).toFixed(1)} KB`;
+      return `${(
+        bytes / 1024
+      ).toFixed(1)} KB`;
     }
 
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+    return `${(
+      bytes /
+      (1024 * 1024)
+    ).toFixed(1)} MB`;
   };
+
+
+  // =========================================================
+  // UI
+  // =========================================================
 
   return (
     <section
       id="upload"
       className="premium-upload"
     >
+
+      {/* =====================================================
+          HEADING
+      ====================================================== */}
+
       <motion.div
         className="premium-upload__heading"
         initial={{
@@ -81,14 +113,23 @@ function UploadZone({
         <h2>
           Bring your document.
           <br />
-          <span>We'll handle the intelligence.</span>
+
+          <span>
+            We'll handle the intelligence.
+          </span>
         </h2>
 
         <p>
-          Upload a supported document and turn it into
-          searchable, conversational knowledge.
+          Upload a supported document and turn
+          it into searchable, conversational
+          knowledge.
         </p>
       </motion.div>
+
+
+      {/* =====================================================
+          UPLOAD CARD
+      ====================================================== */}
 
       <motion.div
         className="premium-upload__card"
@@ -109,6 +150,11 @@ function UploadZone({
           delay: 0.1,
         }}
       >
+
+        {/* ===================================================
+            DROP ZONE
+        ==================================================== */}
+
         <div
           className={`premium-drop-zone ${
             dragActive
@@ -128,18 +174,26 @@ function UploadZone({
             }
           }}
         >
+
           <input
             ref={fileInputRef}
             type="file"
-            accept=".pdf,.xlsx,.csv"
+            accept=".pdf,.docx,.txt,.xlsx,.csv"
             onChange={handleFileChange}
             className="hidden-file-input"
           />
 
+
           <div className="premium-drop-zone__glow" />
+
+
+          {/* =================================================
+              NO FILE SELECTED
+          ================================================== */}
 
           {!file ? (
             <>
+
               <motion.div
                 className="premium-drop-zone__icon"
                 animate={{
@@ -154,57 +208,106 @@ function UploadZone({
                 <UploadCloud size={30} />
               </motion.div>
 
+
               <h3>
                 Drop your document here
               </h3>
 
+
               <p>
                 Drag & drop or{" "}
-                <strong>click to browse</strong>
+                <strong>
+                  click to browse
+                </strong>
               </p>
 
+
+              {/* =============================================
+                  SUPPORTED FORMATS
+              ============================================== */}
+
               <div className="premium-drop-zone__formats">
+
                 <span>
                   <FileText size={14} />
                   PDF
                 </span>
+
+
+                <span>
+                  <FileText size={14} />
+                  DOCX
+                </span>
+
+
+                <span>
+                  <FileText size={14} />
+                  TXT
+                </span>
+
 
                 <span>
                   <FileSpreadsheet size={14} />
                   XLSX
                 </span>
 
+
                 <span>
                   <FileSpreadsheet size={14} />
                   CSV
                 </span>
+
               </div>
+
             </>
+
           ) : (
+
+            /* ===============================================
+               FILE SELECTED
+            ================================================ */
+
             <div className="premium-selected-file">
+
               <div className="premium-selected-file__icon">
                 {getFileIcon()}
               </div>
 
+
               <div className="premium-selected-file__info">
-                <span>READY TO ANALYZE</span>
+
+                <span>
+                  READY TO ANALYZE
+                </span>
 
                 <strong>
                   {file.name}
                 </strong>
 
                 <p>
-                  {formatFileSize(file.size)}
+                  {formatFileSize(
+                    file.size
+                  )}
                 </p>
+
               </div>
+
 
               <CheckCircle2
                 className="premium-selected-file__check"
                 size={22}
               />
+
             </div>
+
           )}
+
         </div>
+
+
+        {/* ===================================================
+            FILE ACTIONS
+        ==================================================== */}
 
         {file && (
           <motion.div
@@ -218,6 +321,7 @@ function UploadZone({
               y: 0,
             }}
           >
+
             <button
               type="button"
               className="premium-upload__remove"
@@ -225,8 +329,10 @@ function UploadZone({
               disabled={uploadLoading}
             >
               <X size={16} />
+
               Remove
             </button>
+
 
             <button
               type="button"
@@ -234,49 +340,75 @@ function UploadZone({
               onClick={handleUpload}
               disabled={uploadLoading}
             >
+
               {uploadLoading ? (
                 <>
                   <span className="premium-upload__spinner" />
+
                   Building intelligence...
                 </>
               ) : (
                 <>
                   Analyze document
+
                   <ArrowRight size={17} />
                 </>
               )}
+
             </button>
+
           </motion.div>
         )}
 
+
+        {/* ===================================================
+            PROCESSING
+        ==================================================== */}
+
         {uploadLoading && (
           <div className="premium-processing">
+
             <div className="premium-processing__line">
               <span />
             </div>
 
             <p>
-              Extracting content, generating embeddings
-              and building your document knowledge index...
+              Extracting content, generating
+              embeddings and building your document
+              knowledge index...
             </p>
+
           </div>
         )}
 
+
+        {/* ===================================================
+            FOOTER
+        ==================================================== */}
+
         <div className="premium-upload__footer">
+
           <span>
             <CheckCircle2 size={13} />
-            PDF, XLSX & CSV
+
+            PDF, DOCX, TXT, XLSX & CSV
           </span>
 
+
           <span className="premium-upload__footer-dot" />
+
 
           <span>
             Your document stays in your AI workspace
           </span>
+
         </div>
+
       </motion.div>
+
     </section>
   );
 }
+
 
 export default UploadZone;

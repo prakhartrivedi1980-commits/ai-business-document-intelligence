@@ -25,11 +25,15 @@ function Footer() {
 
       <div className="footer__container">
 
-        {/* TOP */}
+        {/* ===================================================
+            TOP
+        ==================================================== */}
 
         <div className="footer__top">
 
-          {/* BRAND */}
+          {/* =================================================
+              BRAND
+          ================================================== */}
 
           <div className="footer__brand">
 
@@ -55,6 +59,10 @@ function Footer() {
             </p>
 
 
+            {/* ===============================================
+                SUPPORTED FORMATS
+            ================================================ */}
+
             <div className="footer__formats">
 
               <span>
@@ -62,10 +70,24 @@ function Footer() {
                 PDF
               </span>
 
+
+              <span>
+                <FileText size={13} />
+                DOCX
+              </span>
+
+
+              <span>
+                <FileText size={13} />
+                TXT
+              </span>
+
+
               <span>
                 <FileSpreadsheet size={13} />
                 XLSX
               </span>
+
 
               <span>
                 <FileSpreadsheet size={13} />
@@ -77,9 +99,13 @@ function Footer() {
           </div>
 
 
-          {/* NAVIGATION */}
+          {/* =================================================
+              NAVIGATION
+          ================================================== */}
 
           <div className="footer__links">
+
+            {/* PRODUCT */}
 
             <div className="footer__column">
 
@@ -106,6 +132,8 @@ function Footer() {
             </div>
 
 
+            {/* INTELLIGENCE */}
+
             <div className="footer__column">
 
               <span className="footer__column-title">
@@ -130,6 +158,8 @@ function Footer() {
 
             </div>
 
+
+            {/* TECHNOLOGY */}
 
             <div className="footer__column">
 
@@ -160,12 +190,16 @@ function Footer() {
         </div>
 
 
-        {/* DIVIDER */}
+        {/* ===================================================
+            DIVIDER
+        ==================================================== */}
 
         <div className="footer__divider" />
 
 
-        {/* BOTTOM */}
+        {/* ===================================================
+            BOTTOM
+        ==================================================== */}
 
         <div className="footer__bottom">
 
