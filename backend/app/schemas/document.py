@@ -130,32 +130,73 @@ class InvoiceLineItem(BaseModel):
 
 
 # =========================================================
+# INVOICE LINE ITEM
+# =========================================================
+
+class InvoiceLineItem(BaseModel):
+    """
+    One product or service listed on an invoice.
+    """
+
+    description: str | None = None
+    quantity: float | None = None
+    unit_price: float | None = None
+    amount: float | None = None
+
+
+# =========================================================
+# INVOICE TAX
+# =========================================================
+
+class InvoiceTax(BaseModel):
+    """
+    One individual tax component.
+
+    Examples:
+    - GST 18%
+    - CGST 9%
+    - SGST 9%
+    - IGST 18%
+    - VAT 20%
+    """
+
+    name: str | None = None
+
+    # Percentage representation:
+    # 18 means 18%, 9 means 9%.
+    rate: float | None = None
+
+    amount: float | None = None
+
+
+# =========================================================
 # STRUCTURED INVOICE DATA
 # =========================================================
 
 class InvoiceData(BaseModel):
     """
-    Structured information extracted from an invoice.
-
-    Fields are optional because invoice layouts and
-    available information vary between documents.
+    Structured information extracted
+    from an invoice.
     """
 
     vendor: str | None = None
-
     customer: str | None = None
 
     invoice_number: str | None = None
-
     invoice_date: str | None = None
-
     due_date: str | None = None
 
     currency: str | None = None
 
     subtotal: float | None = None
 
-    tax: float | None = None
+    taxes: list[InvoiceTax] = Field(
+        default_factory=list
+    )
+
+    discount: float | None = None
+
+    shipping: float | None = None
 
     total: float | None = None
 
@@ -170,8 +211,8 @@ class InvoiceData(BaseModel):
 
 class InvoiceExtractionResponse(BaseModel):
     """
-    API response returned after extracting structured
-    invoice intelligence from an indexed document.
+    API response containing structured
+    invoice information.
     """
 
     document_id: str

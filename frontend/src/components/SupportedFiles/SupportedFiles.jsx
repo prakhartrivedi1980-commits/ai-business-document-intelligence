@@ -1,6 +1,8 @@
 import {
+  Calculator,
   FileSpreadsheet,
   FileText,
+  ReceiptText,
   ScanText,
   Sheet,
   Sparkles,
@@ -96,8 +98,8 @@ const fileTypes = [
     capabilities: [
       "Multiple worksheets",
       "Sheet detection",
-      "Structured extraction",
-      "AI analysis",
+      "Formula preservation",
+      "Structured AI analysis",
     ],
 
     accent: "green",
@@ -302,55 +304,122 @@ function SupportedFiles() {
 
 
         {/* ===================================================
-            OCR CALLOUT
+            SPECIALIZED INTELLIGENCE
         ==================================================== */}
 
-        <motion.div
-          className="supported-files__ocr"
-          initial={{
-            opacity: 0,
-            y: 20,
-          }}
-          whileInView={{
-            opacity: 1,
-            y: 0,
-          }}
-          viewport={{
-            once: true,
-            amount: 0.4,
-          }}
-          transition={{
-            duration: 0.55,
-            delay: 0.15,
-          }}
-        >
+        <div className="supported-files__intelligence">
 
-          <div className="supported-files__ocr-icon">
-            <ScanText size={20} />
-          </div>
+          {/* =================================================
+              OCR
+          ================================================== */}
 
+          <motion.div
+            className="supported-files__special-card supported-files__special-card--ocr"
+            initial={{
+              opacity: 0,
+              y: 20,
+            }}
+            whileInView={{
+              opacity: 1,
+              y: 0,
+            }}
+            viewport={{
+              once: true,
+              amount: 0.3,
+            }}
+            transition={{
+              duration: 0.55,
+              delay: 0.1,
+            }}
+          >
 
-          <div>
-
-            <span>
-              SMART OCR FALLBACK
-            </span>
-
-
-            <h4>
-              Scanned PDFs aren't left behind.
-            </h4>
+            <div className="supported-files__special-icon">
+              <ScanText size={21} />
+            </div>
 
 
-            <p>
-              When a PDF page contains little or no
-              embedded text, DocIntel automatically
-              switches to OCR extraction.
-            </p>
+            <div className="supported-files__special-content">
 
-          </div>
+              <span>
+                SMART OCR FALLBACK
+              </span>
 
-        </motion.div>
+
+              <h4>
+                Scanned PDFs aren't left behind.
+              </h4>
+
+
+              <p>
+                When a PDF page contains little or no
+                embedded text, DocIntel automatically
+                switches to OCR extraction.
+              </p>
+
+            </div>
+
+          </motion.div>
+
+
+          {/* =================================================
+              INVOICE INTELLIGENCE
+          ================================================== */}
+
+          <motion.div
+            className="supported-files__special-card supported-files__special-card--invoice"
+            initial={{
+              opacity: 0,
+              y: 20,
+            }}
+            whileInView={{
+              opacity: 1,
+              y: 0,
+            }}
+            viewport={{
+              once: true,
+              amount: 0.3,
+            }}
+            transition={{
+              duration: 0.55,
+              delay: 0.18,
+            }}
+          >
+
+            <div className="supported-files__special-icon">
+              <ReceiptText size={21} />
+            </div>
+
+
+            <div className="supported-files__special-content">
+
+              <span>
+                INVOICE INTELLIGENCE
+              </span>
+
+
+              <h4>
+                Turn invoices into structured financial data.
+              </h4>
+
+
+              <p>
+                Extract parties, invoice details,
+                line items, multiple taxes, discounts,
+                shipping and reconciled financial totals.
+              </p>
+
+            </div>
+
+
+            <div className="supported-files__invoice-badge">
+              <Calculator size={13} />
+
+              Financial reconciliation
+            </div>
+
+          </motion.div>
+
+        </div>
 
       </div>
 

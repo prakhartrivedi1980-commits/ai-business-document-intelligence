@@ -119,9 +119,25 @@
   display: grid;
 
   grid-template-columns:
-    repeat(3, minmax(0, 1fr));
+    repeat(6, minmax(0, 1fr));
 
   gap: 14px;
+}
+
+
+/*
+   Normal feature cards occupy two columns.
+
+   First six become:
+
+   01  02  03
+   04  05  06
+
+   Invoice occupies the full final row.
+*/
+
+.feature-card {
+  grid-column: span 2;
 }
 
 
@@ -232,6 +248,70 @@
 
 
 /* =========================================================
+   INVOICE FEATURE
+========================================================= */
+
+.feature-card--invoice {
+  border-color:
+    rgba(52, 211, 153, 0.14);
+
+  background:
+    radial-gradient(
+      circle at 0% 0%,
+      rgba(52, 211, 153, 0.07),
+      transparent 35%
+    ),
+    radial-gradient(
+      circle at 100% 100%,
+      rgba(79, 124, 255, 0.035),
+      transparent 40%
+    ),
+    rgba(255, 255, 255, 0.018);
+}
+
+.feature-card--invoice::before {
+  background: #34d399;
+}
+
+.feature-card--invoice:hover {
+  border-color:
+    rgba(110, 231, 183, 0.27);
+
+  background:
+    radial-gradient(
+      circle at 0% 0%,
+      rgba(52, 211, 153, 0.11),
+      transparent 38%
+    ),
+    radial-gradient(
+      circle at 100% 100%,
+      rgba(79, 124, 255, 0.05),
+      transparent 40%
+    ),
+    rgba(255, 255, 255, 0.025);
+
+  box-shadow:
+    0 22px 55px
+    rgba(25, 110, 75, 0.1),
+    inset 0 1px
+    rgba(255, 255, 255, 0.035);
+}
+
+
+/* =========================================================
+   FEATURED INVOICE LAYOUT
+========================================================= */
+
+.feature-card--featured {
+  grid-column: 1 / -1;
+
+  min-height: 230px;
+
+  padding: 27px 30px;
+}
+
+
+/* =========================================================
    CARD TOP
 ========================================================= */
 
@@ -260,7 +340,22 @@
     rgba(139, 92, 246, 0.07);
 
   color: #a78bfa;
+
+  transition:
+    transform 0.25s ease,
+    border-color 0.25s ease,
+    background 0.25s ease;
 }
+
+.feature-card:hover
+  .feature-card__icon {
+  transform:
+    translateY(-3px)
+    rotate(-2deg);
+}
+
+
+/* BLUE */
 
 .feature-card--blue
   .feature-card__icon {
@@ -273,6 +368,9 @@
   color: #82aaff;
 }
 
+
+/* CYAN */
+
 .feature-card--cyan
   .feature-card__icon {
   border-color:
@@ -283,6 +381,9 @@
 
   color: #67e8f9;
 }
+
+
+/* GREEN */
 
 .feature-card--green
   .feature-card__icon {
@@ -295,6 +396,25 @@
   color: #6ee7b7;
 }
 
+
+/* INVOICE */
+
+.feature-card--invoice
+  .feature-card__icon {
+  border-color:
+    rgba(52, 211, 153, 0.18);
+
+  background:
+    rgba(52, 211, 153, 0.08);
+
+  color: #6ee7b7;
+
+  box-shadow:
+    0 0 25px
+    rgba(52, 211, 153, 0.07);
+}
+
+
 .feature-card__number {
   color: #474752;
 
@@ -304,6 +424,11 @@
   font-weight: 800;
 
   letter-spacing: 1px;
+}
+
+.feature-card--invoice
+  .feature-card__number {
+  color: #527561;
 }
 
 
@@ -336,6 +461,28 @@
 
   font-size: 11px;
   line-height: 1.7;
+}
+
+
+/* Featured Invoice text */
+
+.feature-card--featured
+  .feature-card__content {
+  max-width: 720px;
+
+  margin-top: 25px;
+}
+
+.feature-card--featured
+  .feature-card__content h3 {
+  font-size: 20px;
+}
+
+.feature-card--featured
+  .feature-card__content p {
+  max-width: 680px;
+
+  font-size: 11px;
 }
 
 
@@ -375,36 +522,89 @@
 }
 
 
+/* Invoice badge */
+
+.feature-card--invoice
+  .feature-card__footer span {
+  border-color:
+    rgba(52, 211, 153, 0.13);
+
+  background:
+    rgba(52, 211, 153, 0.045);
+
+  color: #72b98e;
+}
+
+
 /* =========================================================
-   RESPONSIVE
+   TABLET
 ========================================================= */
 
 @media (max-width: 950px) {
+
   .features__grid {
     grid-template-columns:
       repeat(2, minmax(0, 1fr));
   }
+
+
+  .feature-card {
+    grid-column: auto;
+  }
+
+
+  /*
+     Keep Invoice intentional and prominent.
+  */
+
+  .feature-card--featured {
+    grid-column: 1 / -1;
+  }
 }
 
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
 @media (max-width: 650px) {
+
   .features {
     padding:
       90px 16px;
   }
 
+
   .features__heading {
     margin-bottom: 38px;
   }
+
 
   .features__heading h2 {
     letter-spacing: -2px;
   }
 
+
   .features__grid {
     grid-template-columns: 1fr;
   }
 
-  .feature-card {
+
+  .feature-card,
+  .feature-card--featured {
+    grid-column: auto;
+
     min-height: 245px;
+  }
+
+
+  .feature-card--featured {
+    padding: 22px;
+  }
+
+
+  .feature-card--featured
+    .feature-card__content h3 {
+    font-size: 17px;
   }
 }

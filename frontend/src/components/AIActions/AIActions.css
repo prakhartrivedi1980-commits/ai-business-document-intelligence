@@ -72,8 +72,9 @@
 
 .ai-actions__grid {
   display: grid;
+
   grid-template-columns:
-    repeat(2, minmax(0, 1fr));
+    repeat(3, minmax(0, 1fr));
 
   gap: 12px;
 }
@@ -86,7 +87,8 @@
 .ai-action-card {
   position: relative;
 
-  min-height: 215px;
+  min-width: 0;
+  min-height: 225px;
 
   padding: 19px;
 
@@ -157,7 +159,8 @@
     rgba(255, 255, 255, 0.025);
 
   box-shadow:
-    0 16px 40px rgba(70, 45, 150, 0.12);
+    0 16px 40px
+    rgba(70, 45, 150, 0.12);
 }
 
 .ai-action-card:hover::before {
@@ -165,12 +168,14 @@
 }
 
 .ai-action-card:disabled {
+  opacity: 0.75;
+
   cursor: wait;
 }
 
 
 /* =========================================================
-   BLUE VARIANT
+   BLUE VARIANT — KEY POINTS
 ========================================================= */
 
 .ai-action-card--blue {
@@ -201,7 +206,48 @@
     rgba(255, 255, 255, 0.025);
 
   box-shadow:
-    0 16px 40px rgba(50, 80, 180, 0.1);
+    0 16px 40px
+    rgba(50, 80, 180, 0.1);
+}
+
+
+/* =========================================================
+   GREEN VARIANT — INVOICE
+========================================================= */
+
+.ai-action-card--invoice {
+  border-color:
+    rgba(52, 211, 153, 0.13);
+
+  background:
+    radial-gradient(
+      circle at 0% 0%,
+      rgba(52, 211, 153, 0.075),
+      transparent 40%
+    ),
+    rgba(255, 255, 255, 0.018);
+}
+
+.ai-action-card--invoice::before {
+  background:
+    rgba(52, 211, 153, 0.13);
+}
+
+.ai-action-card--invoice:hover:not(:disabled) {
+  border-color:
+    rgba(110, 231, 183, 0.28);
+
+  background:
+    radial-gradient(
+      circle at 0% 0%,
+      rgba(52, 211, 153, 0.115),
+      transparent 45%
+    ),
+    rgba(255, 255, 255, 0.025);
+
+  box-shadow:
+    0 16px 40px
+    rgba(30, 130, 90, 0.1);
 }
 
 
@@ -222,25 +268,54 @@
   width: 42px;
   height: 42px;
 
+  flex-shrink: 0;
+
   display: grid;
   place-items: center;
 
-  border: 1px solid rgba(167, 139, 250, 0.15);
+  border: 1px solid
+    rgba(167, 139, 250, 0.15);
+
   border-radius: 11px;
 
-  background: rgba(139, 92, 246, 0.08);
+  background:
+    rgba(139, 92, 246, 0.08);
 
   color: var(--primary-light);
 }
 
+
+/* Key points icon */
+
 .ai-action-card--blue
   .ai-action-card__icon {
-  border-color: rgba(96, 165, 250, 0.15);
+  border-color:
+    rgba(96, 165, 250, 0.15);
 
-  background: rgba(79, 124, 255, 0.08);
+  background:
+    rgba(79, 124, 255, 0.08);
 
   color: #82aaff;
 }
+
+
+/* Invoice icon */
+
+.ai-action-card--invoice
+  .ai-action-card__icon {
+  border-color:
+    rgba(52, 211, 153, 0.16);
+
+  background:
+    rgba(52, 211, 153, 0.075);
+
+  color: #6ee7b7;
+}
+
+
+/* =========================================================
+   ARROW
+========================================================= */
 
 .ai-action-card__arrow {
   color: #565663;
@@ -260,6 +335,11 @@
 .ai-action-card--blue:hover:not(:disabled)
   .ai-action-card__arrow {
   color: #82aaff;
+}
+
+.ai-action-card--invoice:hover:not(:disabled)
+  .ai-action-card__arrow {
+  color: #6ee7b7;
 }
 
 
@@ -289,6 +369,11 @@
 .ai-action-card--blue
   .ai-action-card__content > span {
   color: #708cc8;
+}
+
+.ai-action-card--invoice
+  .ai-action-card__content > span {
+  color: #63aa82;
 }
 
 .ai-action-card__content h4 {
@@ -338,12 +423,15 @@
   width: 6px;
   height: 6px;
 
+  flex-shrink: 0;
+
   border-radius: 50%;
 
   background: #6ddd91;
 
   box-shadow:
-    0 0 8px rgba(109, 221, 145, 0.55);
+    0 0 8px
+    rgba(109, 221, 145, 0.55);
 }
 
 
@@ -355,18 +443,35 @@
   width: 11px;
   height: 11px;
 
-  border: 2px solid rgba(167, 139, 250, 0.2);
-  border-top-color: var(--primary-light);
+  flex-shrink: 0;
+
+  border: 2px solid
+    rgba(167, 139, 250, 0.2);
+
+  border-top-color:
+    var(--primary-light);
+
   border-radius: 50%;
 
   animation:
-    ai-action-spin 0.7s linear infinite;
+    ai-action-spin
+    0.7s linear infinite;
 }
 
 .ai-action-card--blue
   .ai-action-card__loader {
-  border-color: rgba(96, 165, 250, 0.2);
+  border-color:
+    rgba(96, 165, 250, 0.2);
+
   border-top-color: #82aaff;
+}
+
+.ai-action-card--invoice
+  .ai-action-card__loader {
+  border-color:
+    rgba(52, 211, 153, 0.2);
+
+  border-top-color: #6ee7b7;
 }
 
 @keyframes ai-action-spin {
@@ -377,7 +482,28 @@
 
 
 /* =========================================================
-   RESPONSIVE
+   TABLET
+========================================================= */
+
+@media (max-width: 900px) {
+  .ai-actions__grid {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+
+  /*
+     Third Invoice card uses the complete
+     second row on tablets.
+  */
+
+  .ai-action-card--invoice {
+    grid-column: 1 / -1;
+  }
+}
+
+
+/* =========================================================
+   MOBILE
 ========================================================= */
 
 @media (max-width: 700px) {
@@ -389,10 +515,19 @@
     grid-template-columns: 1fr;
   }
 
+  .ai-action-card--invoice {
+    grid-column: auto;
+  }
+
   .ai-action-card {
     min-height: 200px;
   }
 }
+
+
+/* =========================================================
+   SMALL MOBILE
+========================================================= */
 
 @media (max-width: 480px) {
   .ai-actions {

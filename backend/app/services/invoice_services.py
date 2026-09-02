@@ -1,5 +1,4 @@
 import json
-import re
 
 from pydantic import ValidationError
 
@@ -15,8 +14,8 @@ class InvoiceService:
     Responsibilities:
     - Retrieve normalized document text
     - Use the LLM for semantic invoice extraction
-    - Validate the generated structure with Pydantic
-    - Reconcile safe arithmetic deterministically
+    - Validate output with Pydantic
+    - Reconcile safe financial arithmetic
     """
 
     # =========================================================
@@ -80,7 +79,15 @@ Use exactly this JSON structure:
   "due_date": null,
   "currency": null,
   "subtotal": null,
-  "tax": null,
+  "taxes": [
+    {{
+      "name": null,
+      "rate": null,
+      "amount": null
+    }}
+  ],
+  "discount": null,
+  "shipping": null,
   "total": null,
   "line_items": [
     {{
@@ -94,28 +101,67 @@ Use exactly this JSON structure:
 
 Rules:
 
+GENERAL:
 - Use only information present in the document.
-- Never invent missing values.
-- If a field cannot be determined, return null.
-- Monetary values must be numbers only.
-- Do not include currency symbols in monetary values.
-- quantity must be numeric when available.
+- Never invent missing information.
+- If a scalar field cannot be determined, return null.
+- If there are no taxes, return "taxes": [].
+- If there are no identifiable line items,
+  return "line_items": [].
+- Return numbers as JSON numbers, not strings.
+- Do not include currency symbols inside numeric values.
+- Ignore obvious OCR noise and decorative text.
+
+PARTIES:
+- vendor means the company or person issuing the invoice.
+- customer means the company or person being billed.
+
+IDENTIFIERS:
 - Preserve invoice numbers exactly as written.
-- Extract all clearly identifiable line items.
-- If there are no identifiable line items, return [].
-- vendor means the entity issuing the invoice.
-- customer means the entity being billed.
-- subtotal means the amount before tax and final adjustments.
-- tax means the monetary tax amount, NOT the tax percentage.
-- total means the final invoice amount payable.
-- currency should preferably use a currency code such as
-  INR, USD, EUR, or GBP.
+- Preserve dates as written when possible.
+
+CURRENCY:
+- Prefer standard codes such as INR, USD, EUR, GBP
+  when the currency can be determined.
+
+LINE ITEMS:
+- Extract every clearly identifiable product or service.
+- quantity is the purchased quantity when available.
+- unit_price is the price per unit.
+- amount is the line total.
 - A spreadsheet formula beginning with "=" is a formula,
-  not a monetary value.
-- When quantity and unit price are clearly available,
-  use them to understand the corresponding line-item amount.
-- Ignore obvious OCR noise, decorative text, and
-  unrelated headers.
+  not a literal monetary value.
+- When quantity and unit price are available, use them
+  to understand the corresponding line amount.
+
+SUBTOTAL:
+- subtotal is the amount before taxes and later
+  invoice-level adjustments.
+- Do not treat tax, shipping, discount, or final total
+  as line items.
+
+TAXES:
+- Extract each distinct tax separately.
+- Examples include GST, CGST, SGST, IGST, VAT,
+  sales tax, and service tax.
+- "rate" must be the percentage number.
+- Example: 18% must be returned as 18, not 0.18.
+- Example: 9% must be returned as 9.
+- If the document contains "GST Rate | 0.18",
+  understand that as 18 percent.
+- "amount" is the monetary amount of that tax.
+- Do not combine CGST and SGST into one tax when
+  they are listed separately.
+
+ADJUSTMENTS:
+- discount is the invoice-level discount amount.
+- shipping is the invoice-level shipping/freight/
+  delivery amount when clearly identifiable.
+- If no discount or shipping is present, return null.
+
+TOTAL:
+- total is the final invoice amount payable.
+- Do not invent a total from incomplete information.
 
 INVOICE TEXT:
 
@@ -130,7 +176,7 @@ JSON:
 
         raw_response = await RAGService.generate_text(
             prompt,
-            num_predict=1000,
+            num_predict=1400,
         )
 
         print(
@@ -172,6 +218,11 @@ JSON:
             )
 
         except ValidationError as exc:
+            print(
+                "INVOICE VALIDATION ERROR:",
+                exc,
+            )
+
             raise ValueError(
                 "AI returned invoice data "
                 "in an invalid format."
@@ -181,12 +232,9 @@ JSON:
         # DETERMINISTIC RECONCILIATION
         # =====================================================
 
-        invoice = InvoiceService._reconcile_invoice(
-            invoice=invoice,
-            document_text=document_text,
+        return InvoiceService._reconcile_invoice(
+            invoice
         )
-
-        return invoice
 
     # =========================================================
     # JSON CLEANING
@@ -198,7 +246,7 @@ JSON:
     ) -> str:
         """
         Remove accidental Markdown fences and isolate
-        the JSON object when possible.
+        the JSON object.
         """
 
         cleaned = raw_response.strip()
@@ -213,10 +261,11 @@ JSON:
             )
 
             if cleaned.endswith("```"):
-                cleaned = cleaned[:-3].strip()
+                cleaned = (
+                    cleaned[:-3]
+                    .strip()
+                )
 
-        # Defensive handling if the model adds
-        # a small amount of text around the JSON.
         first_brace = cleaned.find("{")
         last_brace = cleaned.rfind("}")
 
@@ -233,7 +282,7 @@ JSON:
         return cleaned
 
     # =========================================================
-    # NUMBER HELPERS
+    # MONEY HELPER
     # =========================================================
 
     @staticmethod
@@ -241,7 +290,7 @@ JSON:
         value: float,
     ) -> float:
         """
-        Normalize monetary arithmetic to two decimals.
+        Round monetary values consistently.
         """
 
         return round(
@@ -250,304 +299,347 @@ JSON:
         )
 
     # =========================================================
-    # TAX RATE EXTRACTION
+    # RATE NORMALIZATION
     # =========================================================
 
     @staticmethod
-    def _extract_tax_rate(
-        document_text: str,
+    def _normalize_tax_rate(
+        rate: float | None,
     ) -> float | None:
         """
-        Extract an explicitly stated tax/GST/VAT rate
-        from normalized document text.
+        Normalize tax rates to percentage representation.
 
-        Returns the rate as a decimal:
-        18% -> 0.18
-        0.18 -> 0.18
+        Examples:
+        18   -> 18
+        9    -> 9
+        0.18 -> 18
+        0.09 -> 9
         """
 
-        patterns = [
-            # GST Rate | 0.18
-            # Tax Rate: 0.18
-            # VAT Rate = 0.20
-            r"""
-            (?ix)
-            \b(?:gst|tax|vat)
-            \s*rate
-            \s*(?:\||:|=)?
-            \s*
-            ([0-9]+(?:\.[0-9]+)?)
-            \s*%?
-            """,
+        if rate is None:
+            return None
 
-            # GST (18%)
-            # VAT (20%)
-            r"""
-            (?ix)
-            \b(?:gst|tax|vat)
-            \s*
-            \(
-            \s*
-            ([0-9]+(?:\.[0-9]+)?)
-            \s*%
-            \s*
-            \)
-            """,
+        rate = float(rate)
 
-            # GST 18%
-            # Tax 18%
-            r"""
-            (?ix)
-            \b(?:gst|tax|vat)
-            \s+
-            ([0-9]+(?:\.[0-9]+)?)
-            \s*%
-            """,
-        ]
+        if rate < 0:
+            return None
 
-        for pattern in patterns:
-            match = re.search(
-                pattern,
-                document_text,
-            )
+        if 0 < rate <= 1:
+            rate *= 100
 
-            if not match:
-                continue
-
-            try:
-                rate = float(
-                    match.group(1)
-                )
-
-            except ValueError:
-                continue
-
-            # Example:
-            # 18 -> 0.18
-            if rate > 1:
-                rate /= 100
-
-            # Reject obviously invalid rates.
-            if 0 <= rate <= 1:
-                return rate
-
-        return None
-
-    # =========================================================
-    # SIMPLE INVOICE CHECK
-    # =========================================================
-
-    @staticmethod
-    def _has_complex_adjustments(
-        document_text: str,
-    ) -> bool:
-        """
-        Detect adjustments that make subtotal + tax
-        insufficient for safely calculating final total.
-
-        This is deliberately conservative.
-        """
-
-        adjustment_terms = [
-            "discount",
-            "shipping",
-            "freight",
-            "delivery charge",
-            "service charge",
-            "withholding",
-            "withholding tax",
-            "tds",
-            "credit",
-            "credit note",
-            "round off",
-            "rounding adjustment",
-            "surcharge",
-        ]
-
-        lowered_text = (
-            document_text.lower()
-        )
-
-        return any(
-            term in lowered_text
-            for term in adjustment_terms
+        return round(
+            rate,
+            4,
         )
 
     # =========================================================
-    # RECONCILIATION
+    # LINE ITEM RECONCILIATION
     # =========================================================
 
     @staticmethod
-    def _reconcile_invoice(
+    def _reconcile_line_items(
         invoice: InvoiceData,
-        document_text: str,
-    ) -> InvoiceData:
+    ) -> None:
         """
-        Reconcile arithmetic that can be determined
-        safely from extracted invoice data.
+        Correct line-item arithmetic when quantity
+        and unit price are both available.
 
-        Important:
-        AI is used for semantic understanding.
-        Python is used for deterministic arithmetic.
+        quantity * unit_price is deterministic for
+        the current invoice schema.
         """
-
-        # =====================================================
-        # LINE ITEMS
-        # =====================================================
 
         for item in invoice.line_items:
 
             if (
-                item.quantity is not None
-                and item.unit_price is not None
+                item.quantity is None
+                or item.unit_price is None
             ):
-                calculated_amount = (
-                    InvoiceService._round_money(
-                        item.quantity
-                        * item.unit_price
-                    )
+                continue
+
+            calculated_amount = (
+                InvoiceService._round_money(
+                    item.quantity
+                    * item.unit_price
+                )
+            )
+
+            if (
+                item.amount is None
+                or abs(
+                    item.amount
+                    - calculated_amount
+                ) > 0.01
+            ):
+                print(
+                    "CORRECTING LINE ITEM:",
+                    item.description,
+                    item.amount,
+                    "->",
+                    calculated_amount,
                 )
 
-                # Quantity * unit price is deterministic
-                # for the simple line-item schema we use.
-                if (
-                    item.amount is None
-                    or abs(
-                        item.amount
-                        - calculated_amount
-                    ) > 0.01
-                ):
-                    print(
-                        "CORRECTING LINE ITEM AMOUNT:",
-                        item.description,
-                        item.amount,
-                        "->",
-                        calculated_amount,
-                    )
+                item.amount = calculated_amount
 
-                    item.amount = (
-                        calculated_amount
-                    )
+    # =========================================================
+    # SUBTOTAL RECONCILIATION
+    # =========================================================
 
-        # =====================================================
-        # SUBTOTAL
-        # =====================================================
+    @staticmethod
+    def _reconcile_subtotal(
+        invoice: InvoiceData,
+    ) -> None:
+        """
+        Calculate subtotal when every extracted line item
+        has a usable amount.
+
+        This avoids trusting LLM arithmetic when the
+        underlying item values are complete.
+        """
+
+        if not invoice.line_items:
+            return
 
         amounts = [
             item.amount
             for item in invoice.line_items
-            if item.amount is not None
         ]
 
-        all_items_have_amount = (
-            bool(invoice.line_items)
-            and len(amounts)
-            == len(invoice.line_items)
-        )
+        if any(
+            amount is None
+            for amount in amounts
+        ):
+            return
 
-        if all_items_have_amount:
-            calculated_subtotal = (
-                InvoiceService._round_money(
-                    sum(amounts)
-                )
-            )
-
-            if (
-                invoice.subtotal is None
-                or abs(
-                    invoice.subtotal
-                    - calculated_subtotal
-                ) > 0.01
-            ):
-                print(
-                    "CORRECTING SUBTOTAL:",
-                    invoice.subtotal,
-                    "->",
-                    calculated_subtotal,
-                )
-
-                invoice.subtotal = (
-                    calculated_subtotal
-                )
-
-        # =====================================================
-        # TAX
-        # =====================================================
-
-        tax_rate = (
-            InvoiceService._extract_tax_rate(
-                document_text
-            )
-        )
-
-        has_complex_adjustments = (
-            InvoiceService
-            ._has_complex_adjustments(
-                document_text
+        calculated_subtotal = (
+            InvoiceService._round_money(
+                sum(amounts)
             )
         )
 
         if (
-            invoice.subtotal is not None
-            and tax_rate is not None
-            and not has_complex_adjustments
+            invoice.subtotal is None
+            or abs(
+                invoice.subtotal
+                - calculated_subtotal
+            ) > 0.01
         ):
+            print(
+                "CORRECTING SUBTOTAL:",
+                invoice.subtotal,
+                "->",
+                calculated_subtotal,
+            )
+
+            invoice.subtotal = (
+                calculated_subtotal
+            )
+
+    # =========================================================
+    # TAX RECONCILIATION
+    # =========================================================
+
+    @staticmethod
+    def _reconcile_taxes(
+        invoice: InvoiceData,
+    ) -> None:
+        """
+        Normalize tax rates and calculate individual
+        tax amounts when both subtotal and rate exist.
+
+        Each tax is handled independently, allowing:
+        - GST
+        - CGST + SGST
+        - IGST
+        - VAT
+        - other percentage taxes
+        """
+
+        for tax in invoice.taxes:
+
+            normalized_rate = (
+                InvoiceService._normalize_tax_rate(
+                    tax.rate
+                )
+            )
+
+            tax.rate = normalized_rate
+
+            if (
+                invoice.subtotal is None
+                or normalized_rate is None
+            ):
+                continue
+
             calculated_tax = (
                 InvoiceService._round_money(
                     invoice.subtotal
-                    * tax_rate
+                    * (
+                        normalized_rate
+                        / 100
+                    )
                 )
             )
 
             if (
-                invoice.tax is None
+                tax.amount is None
                 or abs(
-                    invoice.tax
+                    tax.amount
                     - calculated_tax
                 ) > 0.01
             ):
                 print(
                     "CORRECTING TAX:",
-                    invoice.tax,
+                    tax.name,
+                    tax.amount,
                     "->",
                     calculated_tax,
-                    f"(rate={tax_rate})",
+                    f"({normalized_rate}%)",
                 )
 
-                invoice.tax = calculated_tax
+                tax.amount = calculated_tax
 
-        # =====================================================
-        # TOTAL
-        # =====================================================
+    # =========================================================
+    # TOTAL RECONCILIATION
+    # =========================================================
 
-        if (
-            invoice.subtotal is not None
-            and invoice.tax is not None
-            and not has_complex_adjustments
-        ):
-            calculated_total = (
-                InvoiceService._round_money(
-                    invoice.subtotal
-                    + invoice.tax
-                )
+    @staticmethod
+    def _reconcile_total(
+        invoice: InvoiceData,
+    ) -> None:
+        """
+        Calculate total only when all required components
+        are sufficiently known.
+
+        Formula:
+
+        subtotal
+        - discount
+        + shipping
+        + taxes
+        = total
+
+        Missing discount/shipping are treated as zero only
+        because null represents that no such adjustment was
+        identified by the extraction stage.
+
+        Tax calculation is performed only when every tax
+        component has an amount.
+        """
+
+        if invoice.subtotal is None:
+            return
+
+        # -----------------------------------------------------
+        # TAX TOTAL
+        # -----------------------------------------------------
+
+        if invoice.taxes:
+
+            tax_amounts = [
+                tax.amount
+                for tax in invoice.taxes
+            ]
+
+            if any(
+                amount is None
+                for amount in tax_amounts
+            ):
+                # We don't know enough to safely
+                # reconstruct the final total.
+                return
+
+            total_tax = sum(
+                tax_amounts
             )
 
-            if (
-                invoice.total is None
-                or abs(
-                    invoice.total
-                    - calculated_total
-                ) > 0.01
-            ):
-                print(
-                    "CORRECTING TOTAL:",
-                    invoice.total,
-                    "->",
-                    calculated_total,
-                )
+        else:
+            total_tax = 0.0
 
-                invoice.total = (
-                    calculated_total
-                )
+        # -----------------------------------------------------
+        # ADJUSTMENTS
+        # -----------------------------------------------------
+
+        discount = (
+            invoice.discount
+            if invoice.discount is not None
+            else 0.0
+        )
+
+        shipping = (
+            invoice.shipping
+            if invoice.shipping is not None
+            else 0.0
+        )
+
+        # -----------------------------------------------------
+        # TOTAL
+        # -----------------------------------------------------
+
+        calculated_total = (
+            InvoiceService._round_money(
+                invoice.subtotal
+                - discount
+                + shipping
+                + total_tax
+            )
+        )
+
+        if (
+            invoice.total is None
+            or abs(
+                invoice.total
+                - calculated_total
+            ) > 0.01
+        ):
+            print(
+                "CORRECTING TOTAL:",
+                invoice.total,
+                "->",
+                calculated_total,
+            )
+
+            invoice.total = calculated_total
+
+    # =========================================================
+    # FULL RECONCILIATION
+    # =========================================================
+
+    @staticmethod
+    def _reconcile_invoice(
+        invoice: InvoiceData,
+    ) -> InvoiceData:
+        """
+        Perform deterministic financial reconciliation
+        after semantic extraction.
+
+        AI:
+        - understands invoice meaning
+        - identifies fields
+        - identifies taxes and adjustments
+
+        Python:
+        - performs arithmetic
+        - corrects inconsistent calculated values
+        """
+
+        # 1. Line amounts
+        InvoiceService._reconcile_line_items(
+            invoice
+        )
+
+        # 2. Subtotal
+        InvoiceService._reconcile_subtotal(
+            invoice
+        )
+
+        # 3. Individual taxes
+        InvoiceService._reconcile_taxes(
+            invoice
+        )
+
+        # 4. Final total
+        InvoiceService._reconcile_total(
+            invoice
+        )
 
         return invoice

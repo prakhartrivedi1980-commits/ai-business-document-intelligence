@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+
 import "./App.css";
 
 import Navbar from "./components/Navbar/Navbar.jsx";
@@ -9,6 +10,7 @@ import Summary from "./components/Summary/Summary.jsx";
 import KeyPoints from "./components/KeyPoints/KeyPoints.jsx";
 import Chat from "./components/Chat/Chat.jsx";
 import AIActions from "./components/AIActions/AIActions.jsx";
+import Invoice from "./components/Invoice/Invoice.jsx";
 import Features from "./components/Features/Features.jsx";
 import HowItWorks from "./components/HowItWorks/HowItWorks.jsx";
 import SupportedFiles from "./components/SupportedFiles/SupportedFiles.jsx";
@@ -16,15 +18,18 @@ import FinalCTA from "./components/FinalCTA/FinalCTA.jsx";
 import Footer from "./components/Footer/Footer.jsx";
 
 
-const API_BASE_URL = "http://127.0.0.1:8000";
+const API_BASE_URL =
+  "http://127.0.0.1:8000";
 
 
 function App() {
+
   // =========================================================
   // DOCUMENT STATE
   // =========================================================
 
-  const [file, setFile] = useState(null);
+  const [file, setFile] =
+    useState(null);
 
   const [documentInfo, setDocumentInfo] =
     useState(null);
@@ -43,7 +48,7 @@ function App() {
 
 
   // =========================================================
-  // ON-DEMAND AI OPERATIONS
+  // SUMMARY
   // =========================================================
 
   const [summary, setSummary] =
@@ -53,15 +58,34 @@ function App() {
     useState(false);
 
 
+  // =========================================================
+  // KEY POINTS
+  // =========================================================
+
   const [keyPoints, setKeyPoints] =
     useState([]);
 
-  const [keyPointsLoading, setKeyPointsLoading] =
-    useState(false);
+  const [
+    keyPointsLoading,
+    setKeyPointsLoading,
+  ] = useState(false);
 
 
   // =========================================================
-  // RAG CHAT STATE
+  // INVOICE INTELLIGENCE
+  // =========================================================
+
+  const [invoice, setInvoice] =
+    useState(null);
+
+  const [
+    invoiceLoading,
+    setInvoiceLoading,
+  ] = useState(false);
+
+
+  // =========================================================
+  // RAG CHAT
   // =========================================================
 
   const [question, setQuestion] =
@@ -81,7 +105,8 @@ function App() {
   // REFERENCES
   // =========================================================
 
-  const fileInputRef = useRef(null);
+  const fileInputRef =
+    useRef(null);
 
 
   // =========================================================
@@ -89,13 +114,25 @@ function App() {
   // =========================================================
 
   const resetDocumentResults = () => {
+
     setDocumentInfo(null);
+
     setDocumentId(null);
 
+
+    // AI results
+
     setSummary("");
+
     setKeyPoints([]);
 
+    setInvoice(null);
+
+
+    // Chat
+
     setQuestion("");
+
     setMessages([]);
 
     setChatError("");
@@ -106,10 +143,14 @@ function App() {
   // FILE VALIDATION
   // =========================================================
 
-  const validateAndSetFile = (selectedFile) => {
+  const validateAndSetFile = (
+    selectedFile
+  ) => {
+
     if (!selectedFile) {
       return;
     }
+
 
     const allowedExtensions = [
       ".pdf",
@@ -119,16 +160,22 @@ function App() {
       ".csv",
     ];
 
+
     const filename =
       selectedFile.name.toLowerCase();
+
 
     const isSupported =
       allowedExtensions.some(
         (extension) =>
-          filename.endsWith(extension)
+          filename.endsWith(
+            extension
+          )
       );
 
+
     if (!isSupported) {
+
       setError(
         "Unsupported file type. Please upload a PDF, DOCX, TXT, XLSX, or CSV document."
       );
@@ -140,7 +187,10 @@ function App() {
       return;
     }
 
-    setFile(selectedFile);
+
+    setFile(
+      selectedFile
+    );
 
     setError("");
 
@@ -152,11 +202,16 @@ function App() {
   // FILE INPUT
   // =========================================================
 
-  const handleFileChange = (event) => {
+  const handleFileChange = (
+    event
+  ) => {
+
     const selectedFile =
       event.target.files?.[0];
 
-    validateAndSetFile(selectedFile);
+    validateAndSetFile(
+      selectedFile
+    );
   };
 
 
@@ -164,7 +219,10 @@ function App() {
   // DRAG AND DROP
   // =========================================================
 
-  const handleDragOver = (event) => {
+  const handleDragOver = (
+    event
+  ) => {
+
     event.preventDefault();
 
     setDragActive(true);
@@ -176,15 +234,22 @@ function App() {
   };
 
 
-  const handleDrop = (event) => {
+  const handleDrop = (
+    event
+  ) => {
+
     event.preventDefault();
 
     setDragActive(false);
 
+
     const droppedFile =
       event.dataTransfer.files?.[0];
 
-    validateAndSetFile(droppedFile);
+
+    validateAndSetFile(
+      droppedFile
+    );
   };
 
 
@@ -193,6 +258,7 @@ function App() {
   // =========================================================
 
   const handleUpload = async () => {
+
     if (
       !file ||
       uploadLoading
@@ -200,15 +266,19 @@ function App() {
       return;
     }
 
+
     const formData =
       new FormData();
+
 
     formData.append(
       "file",
       file
     );
 
+
     try {
+
       setUploadLoading(true);
 
       setError("");
@@ -216,16 +286,18 @@ function App() {
       resetDocumentResults();
 
 
-      const response = await fetch(
-        `${API_BASE_URL}/documents/upload`,
-        {
-          method: "POST",
-          body: formData,
-        }
-      );
+      const response =
+        await fetch(
+          `${API_BASE_URL}/documents/upload`,
+          {
+            method: "POST",
+            body: formData,
+          }
+        );
 
 
       if (!response.ok) {
+
         throw new Error(
           `Upload failed with status ${response.status}`
         );
@@ -248,279 +320,405 @@ function App() {
 
 
       setDocumentInfo({
-        filename: data.filename,
-        fileType: data.file_type,
-        metadata: data.metadata || {},
-        status: data.status,
+        filename:
+          data.filename,
+
+        fileType:
+          data.file_type,
+
+        metadata:
+          data.metadata || {},
+
+        status:
+          data.status,
       });
 
     } catch (uploadError) {
+
       console.error(
         "Upload error:",
         uploadError
       );
+
 
       setError(
         "Unable to process the document. Make sure FastAPI, Ollama, and Qdrant are running."
       );
 
     } finally {
+
       setUploadLoading(false);
     }
   };
 
 
   // =========================================================
-  // ON-DEMAND SUMMARY
+  // SUMMARY
   // =========================================================
 
-  const handleSummarize = async () => {
-    if (
-      !documentId ||
-      summaryLoading
-    ) {
-      return;
-    }
+  const handleSummarize =
+    async () => {
 
-    try {
-      setSummaryLoading(true);
-
-      setError("");
-
-
-      const response = await fetch(
-        `${API_BASE_URL}/documents/${documentId}/summary`,
-        {
-          method: "POST",
-        }
-      );
-
-
-      if (!response.ok) {
-        throw new Error(
-          `Summary request failed with status ${response.status}`
-        );
+      if (
+        !documentId ||
+        summaryLoading
+      ) {
+        return;
       }
 
 
-      const data =
-        await response.json();
+      try {
+
+        setSummaryLoading(true);
+
+        setError("");
 
 
-      setSummary(
-        data.summary || ""
-      );
-
-    } catch (summaryError) {
-      console.error(
-        "Summary error:",
-        summaryError
-      );
-
-      setError(
-        "Unable to summarize this document. Please try again."
-      );
-
-    } finally {
-      setSummaryLoading(false);
-    }
-  };
+        const response =
+          await fetch(
+            `${API_BASE_URL}/documents/${documentId}/summary`,
+            {
+              method: "POST",
+            }
+          );
 
 
-  // =========================================================
-  // ON-DEMAND KEY POINTS
-  // =========================================================
+        if (!response.ok) {
 
-  const handleKeyPoints = async () => {
-    if (
-      !documentId ||
-      keyPointsLoading
-    ) {
-      return;
-    }
-
-    try {
-      setKeyPointsLoading(true);
-
-      setError("");
-
-
-      const response = await fetch(
-        `${API_BASE_URL}/documents/${documentId}/key-points`,
-        {
-          method: "POST",
+          throw new Error(
+            `Summary request failed with status ${response.status}`
+          );
         }
-      );
 
 
-      if (!response.ok) {
-        throw new Error(
-          `Key-points request failed with status ${response.status}`
+        const data =
+          await response.json();
+
+
+        setSummary(
+          data.summary || ""
         );
+
+      } catch (summaryError) {
+
+        console.error(
+          "Summary error:",
+          summaryError
+        );
+
+
+        setError(
+          "Unable to summarize this document. Please try again."
+        );
+
+      } finally {
+
+        setSummaryLoading(false);
+      }
+    };
+
+
+  // =========================================================
+  // KEY POINTS
+  // =========================================================
+
+  const handleKeyPoints =
+    async () => {
+
+      if (
+        !documentId ||
+        keyPointsLoading
+      ) {
+        return;
       }
 
 
-      const data =
-        await response.json();
+      try {
+
+        setKeyPointsLoading(true);
+
+        setError("");
 
 
-      setKeyPoints(
-        data.key_points || []
-      );
+        const response =
+          await fetch(
+            `${API_BASE_URL}/documents/${documentId}/key-points`,
+            {
+              method: "POST",
+            }
+          );
 
-    } catch (keyPointError) {
-      console.error(
-        "Key points error:",
+
+        if (!response.ok) {
+
+          throw new Error(
+            `Key-points request failed with status ${response.status}`
+          );
+        }
+
+
+        const data =
+          await response.json();
+
+
+        setKeyPoints(
+          data.key_points || []
+        );
+
+      } catch (
         keyPointError
-      );
+      ) {
 
-      setError(
-        "Unable to generate key points. Please try again."
-      );
+        console.error(
+          "Key points error:",
+          keyPointError
+        );
 
-    } finally {
-      setKeyPointsLoading(false);
-    }
-  };
+
+        setError(
+          "Unable to generate key points. Please try again."
+        );
+
+      } finally {
+
+        setKeyPointsLoading(false);
+      }
+    };
+
+
+  // =========================================================
+  // INVOICE EXTRACTION
+  // =========================================================
+
+  const handleExtractInvoice =
+    async () => {
+
+      if (
+        !documentId ||
+        invoiceLoading
+      ) {
+        return;
+      }
+
+
+      try {
+
+        setInvoiceLoading(true);
+
+        setError("");
+
+
+        const response =
+          await fetch(
+            `${API_BASE_URL}/documents/${documentId}/invoice`,
+            {
+              method: "POST",
+            }
+          );
+
+
+        if (!response.ok) {
+
+          throw new Error(
+            `Invoice extraction failed with status ${response.status}`
+          );
+        }
+
+
+        const data =
+          await response.json();
+
+
+        console.log(
+          "Invoice extraction response:",
+          data
+        );
+
+
+        setInvoice(
+          data.invoice || null
+        );
+
+      } catch (
+        invoiceError
+      ) {
+
+        console.error(
+          "Invoice extraction error:",
+          invoiceError
+        );
+
+
+        setError(
+          "Unable to extract invoice information. Make sure the document contains recognizable invoice data."
+        );
+
+      } finally {
+
+        setInvoiceLoading(false);
+      }
+    };
 
 
   // =========================================================
   // CONVERSATION-AWARE RAG CHAT
   // =========================================================
 
-  const handleAskQuestion = async () => {
-    const trimmedQuestion =
-      question.trim();
+  const handleAskQuestion =
+    async () => {
+
+      const trimmedQuestion =
+        question.trim();
 
 
-    if (
-      !trimmedQuestion ||
-      !documentId ||
-      chatLoading
-    ) {
-      return;
-    }
-
-
-    /*
-     * Send only messages that already existed
-     * before the current question.
-     */
-    const conversationHistory =
-      messages.map(
-        (message) => ({
-          role: message.role,
-          content: message.content,
-        })
-      );
-
-
-    const userMessage = {
-      role: "user",
-      content: trimmedQuestion,
-    };
-
-
-    setMessages(
-      (previousMessages) => [
-        ...previousMessages,
-        userMessage,
-      ]
-    );
-
-
-    setQuestion("");
-
-    setChatError("");
-
-    setChatLoading(true);
-
-
-    try {
-      const response = await fetch(
-        `${API_BASE_URL}/ask-document`,
-        {
-          method: "POST",
-
-          headers: {
-            "Content-Type":
-              "application/json",
-          },
-
-          body: JSON.stringify({
-            document_id:
-              documentId,
-
-            question:
-              trimmedQuestion,
-
-            history:
-              conversationHistory,
-          }),
-        }
-      );
-
-
-      if (!response.ok) {
-        throw new Error(
-          `Chat request failed with status ${response.status}`
-        );
+      if (
+        !trimmedQuestion ||
+        !documentId ||
+        chatLoading
+      ) {
+        return;
       }
 
 
-      const data =
-        await response.json();
+      /*
+       * Send only messages that already
+       * existed before the current question.
+       */
+
+      const conversationHistory =
+        messages.map(
+          (message) => ({
+            role:
+              message.role,
+
+            content:
+              message.content,
+          })
+        );
 
 
-      const assistantMessage = {
-        role: "assistant",
-
+      const userMessage = {
+        role: "user",
         content:
-          data.answer,
-
-        sources:
-          data.sources || [],
+          trimmedQuestion,
       };
 
 
       setMessages(
-        (previousMessages) => [
+        (
+          previousMessages
+        ) => [
           ...previousMessages,
-          assistantMessage,
+          userMessage,
         ]
       );
 
-    } catch (chatRequestError) {
-      console.error(
-        "Chat error:",
+
+      setQuestion("");
+
+      setChatError("");
+
+      setChatLoading(true);
+
+
+      try {
+
+        const response =
+          await fetch(
+            `${API_BASE_URL}/ask-document`,
+            {
+              method: "POST",
+
+              headers: {
+                "Content-Type":
+                  "application/json",
+              },
+
+              body:
+                JSON.stringify({
+                  document_id:
+                    documentId,
+
+                  question:
+                    trimmedQuestion,
+
+                  history:
+                    conversationHistory,
+                }),
+            }
+          );
+
+
+        if (!response.ok) {
+
+          throw new Error(
+            `Chat request failed with status ${response.status}`
+          );
+        }
+
+
+        const data =
+          await response.json();
+
+
+        const assistantMessage = {
+          role: "assistant",
+
+          content:
+            data.answer,
+
+          sources:
+            data.sources || [],
+        };
+
+
+        setMessages(
+          (
+            previousMessages
+          ) => [
+            ...previousMessages,
+            assistantMessage,
+          ]
+        );
+
+      } catch (
         chatRequestError
-      );
+      ) {
+
+        console.error(
+          "Chat error:",
+          chatRequestError
+        );
 
 
-      setChatError(
-        "Unable to answer the question. Please try again."
-      );
+        setChatError(
+          "Unable to answer the question. Please try again."
+        );
 
-    } finally {
-      setChatLoading(false);
-    }
-  };
+      } finally {
+
+        setChatLoading(false);
+      }
+    };
 
 
   // =========================================================
   // CHAT KEYBOARD HANDLING
   // =========================================================
 
-  const handleQuestionKeyDown = (event) => {
-    if (
-      event.key === "Enter" &&
-      !event.shiftKey
-    ) {
-      event.preventDefault();
+  const handleQuestionKeyDown =
+    (event) => {
 
-      handleAskQuestion();
-    }
-  };
+      if (
+        event.key === "Enter" &&
+        !event.shiftKey
+      ) {
+
+        event.preventDefault();
+
+        handleAskQuestion();
+      }
+    };
 
 
   // =========================================================
@@ -528,7 +726,9 @@ function App() {
   // =========================================================
 
   const handleReset = () => {
+
     setFile(null);
+
 
     resetDocumentResults();
 
@@ -536,6 +736,8 @@ function App() {
     setSummaryLoading(false);
 
     setKeyPointsLoading(false);
+
+    setInvoiceLoading(false);
 
     setChatLoading(false);
 
@@ -545,8 +747,11 @@ function App() {
     setDragActive(false);
 
 
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
+    if (
+      fileInputRef.current
+    ) {
+      fileInputRef.current.value =
+        "";
     }
   };
 
@@ -557,100 +762,275 @@ function App() {
 
   return (
     <>
+
       <Navbar />
 
       <Hero />
 
 
-      {/* MAIN PRODUCT EXPERIENCE */}
+      {/* =====================================================
+          MAIN PRODUCT EXPERIENCE
+      ====================================================== */}
 
       <main className="app">
+
         <div className="container">
 
+
+          {/* =================================================
+              UPLOAD
+          ================================================== */}
+
           {!documentInfo && (
+
             <UploadZone
-              file={file}
-              dragActive={dragActive}
-              uploadLoading={uploadLoading}
-              fileInputRef={fileInputRef}
-              handleFileChange={handleFileChange}
-              handleDragOver={handleDragOver}
-              handleDragLeave={handleDragLeave}
-              handleDrop={handleDrop}
-              handleUpload={handleUpload}
-              handleReset={handleReset}
+              file={
+                file
+              }
+
+              dragActive={
+                dragActive
+              }
+
+              uploadLoading={
+                uploadLoading
+              }
+
+              fileInputRef={
+                fileInputRef
+              }
+
+              handleFileChange={
+                handleFileChange
+              }
+
+              handleDragOver={
+                handleDragOver
+              }
+
+              handleDragLeave={
+                handleDragLeave
+              }
+
+              handleDrop={
+                handleDrop
+              }
+
+              handleUpload={
+                handleUpload
+              }
+
+              handleReset={
+                handleReset
+              }
             />
+
           )}
 
 
+          {/* =================================================
+              GLOBAL ERROR
+          ================================================== */}
+
           {error && (
+
             <div
               className="error-message"
               role="alert"
             >
               {error}
             </div>
+
           )}
 
 
-          {documentInfo && documentId && (
-            <section className="workspace">
+          {/* =================================================
+              DOCUMENT WORKSPACE
+          ================================================== */}
 
-              <DocumentInfo
-                documentInfo={documentInfo}
-                handleReset={handleReset}
-              />
+          {documentInfo &&
+            documentId && (
 
-
-              <AIActions
-                summary={summary}
-                summaryLoading={summaryLoading}
-                keyPoints={keyPoints}
-                keyPointsLoading={keyPointsLoading}
-                handleSummarize={handleSummarize}
-                handleKeyPoints={handleKeyPoints}
-              />
+              <section className="workspace">
 
 
-              {(summary || summaryLoading) && (
-                <Summary
-                  summary={summary}
-                  summaryLoading={summaryLoading}
-                  handleSummarize={handleSummarize}
+                {/* ===========================================
+                    DOCUMENT INFORMATION
+                ============================================ */}
+
+                <DocumentInfo
+                  documentInfo={
+                    documentInfo
+                  }
+
+                  handleReset={
+                    handleReset
+                  }
                 />
-              )}
 
 
-              {(keyPoints.length > 0 ||
-                keyPointsLoading) && (
-                  <KeyPoints
-                    keyPoints={keyPoints}
-                    keyPointsLoading={keyPointsLoading}
-                    handleKeyPoints={handleKeyPoints}
+                {/* ===========================================
+                    AI ACTIONS
+                ============================================ */}
+
+                <AIActions
+                  summary={
+                    summary
+                  }
+
+                  summaryLoading={
+                    summaryLoading
+                  }
+
+                  keyPoints={
+                    keyPoints
+                  }
+
+                  keyPointsLoading={
+                    keyPointsLoading
+                  }
+
+                  invoice={
+                    invoice
+                  }
+
+                  invoiceLoading={
+                    invoiceLoading
+                  }
+
+                  handleSummarize={
+                    handleSummarize
+                  }
+
+                  handleKeyPoints={
+                    handleKeyPoints
+                  }
+
+                  handleExtractInvoice={
+                    handleExtractInvoice
+                  }
+                />
+
+
+                {/* ===========================================
+                    SUMMARY
+                ============================================ */}
+
+                {(summary ||
+                  summaryLoading) && (
+
+                  <Summary
+                    summary={
+                      summary
+                    }
+
+                    summaryLoading={
+                      summaryLoading
+                    }
+
+                    handleSummarize={
+                      handleSummarize
+                    }
                   />
+
                 )}
 
 
-              <Chat
-                question={question}
-                setQuestion={setQuestion}
-                messages={messages}
-                chatLoading={chatLoading}
-                chatError={chatError}
-                handleAskQuestion={handleAskQuestion}
-                handleQuestionKeyDown={
-                  handleQuestionKeyDown
-                }
-              />
+                {/* ===========================================
+                    KEY POINTS
+                ============================================ */}
 
-            </section>
-          )}
+                {(keyPoints.length >
+                  0 ||
+                  keyPointsLoading) && (
+
+                  <KeyPoints
+                    keyPoints={
+                      keyPoints
+                    }
+
+                    keyPointsLoading={
+                      keyPointsLoading
+                    }
+
+                    handleKeyPoints={
+                      handleKeyPoints
+                    }
+                  />
+
+                )}
+
+
+                {/* ===========================================
+                    INVOICE INTELLIGENCE
+                ============================================ */}
+
+                {(invoice ||
+                  invoiceLoading) && (
+
+                  <Invoice
+                    invoice={
+                      invoice
+                    }
+
+                    invoiceLoading={
+                      invoiceLoading
+                    }
+
+                    handleExtractInvoice={
+                      handleExtractInvoice
+                    }
+                  />
+
+                )}
+
+
+                {/* ===========================================
+                    DOCUMENT CHAT
+                ============================================ */}
+
+                <Chat
+                  question={
+                    question
+                  }
+
+                  setQuestion={
+                    setQuestion
+                  }
+
+                  messages={
+                    messages
+                  }
+
+                  chatLoading={
+                    chatLoading
+                  }
+
+                  chatError={
+                    chatError
+                  }
+
+                  handleAskQuestion={
+                    handleAskQuestion
+                  }
+
+                  handleQuestionKeyDown={
+                    handleQuestionKeyDown
+                  }
+                />
+
+              </section>
+
+            )}
 
         </div>
+
       </main>
 
 
-      {/* LANDING PAGE CONTENT */}
+      {/* =====================================================
+          LANDING PAGE CONTENT
+      ====================================================== */}
 
       <Features />
 
@@ -661,6 +1041,7 @@ function App() {
       <FinalCTA />
 
       <Footer />
+
     </>
   );
 }

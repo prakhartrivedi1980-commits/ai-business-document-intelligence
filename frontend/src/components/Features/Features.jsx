@@ -2,6 +2,7 @@ import {
   BrainCircuit,
   FileSearch,
   MessageSquareText,
+  ReceiptText,
   ScanText,
   Sparkles,
   TableProperties,
@@ -22,6 +23,7 @@ const features = [
     tag: "Conversational RAG",
     className: "feature-card--purple",
   },
+
   {
     icon: Sparkles,
     number: "02",
@@ -31,6 +33,7 @@ const features = [
     tag: "AI Summarization",
     className: "feature-card--blue",
   },
+
   {
     icon: BrainCircuit,
     number: "03",
@@ -40,6 +43,7 @@ const features = [
     tag: "Intelligence Extraction",
     className: "feature-card--violet",
   },
+
   {
     icon: ScanText,
     number: "04",
@@ -49,6 +53,7 @@ const features = [
     tag: "Smart OCR",
     className: "feature-card--cyan",
   },
+
   {
     icon: TableProperties,
     number: "05",
@@ -58,6 +63,7 @@ const features = [
     tag: "Structured Data",
     className: "feature-card--indigo",
   },
+
   {
     icon: FileSearch,
     number: "06",
@@ -66,6 +72,17 @@ const features = [
       "Semantic search retrieves relevant document sections before generation, keeping answers connected to your source.",
     tag: "Vector Search",
     className: "feature-card--green",
+  },
+
+  {
+    icon: ReceiptText,
+    number: "07",
+    title: "Understand invoices",
+    description:
+      "Extract vendors, customers, invoice details, line items, multiple taxes, adjustments and reconciled financial totals.",
+    tag: "Invoice Intelligence",
+    className:
+      "feature-card--invoice feature-card--featured",
   },
 ];
 
@@ -78,7 +95,12 @@ function Features() {
     >
       <div className="features__glow" />
 
+
       <div className="features__container">
+
+        {/* ===================================================
+            HEADING
+        ==================================================== */}
 
         <motion.div
           className="features__heading"
@@ -100,8 +122,10 @@ function Features() {
         >
           <span className="features__eyebrow">
             <Sparkles size={13} />
+
             DOCUMENT INTELLIGENCE
           </span>
+
 
           <h2>
             More than document search.
@@ -112,13 +136,19 @@ function Features() {
             </span>
           </h2>
 
+
           <p>
             One workspace for understanding,
             questioning and extracting knowledge
             from your documents.
           </p>
+
         </motion.div>
 
+
+        {/* ===================================================
+            FEATURE GRID
+        ==================================================== */}
 
         <div className="features__grid">
 
@@ -134,9 +164,12 @@ function Features() {
               },
               index
             ) => (
+
               <motion.article
                 key={title}
-                className={`feature-card ${className}`}
+                className={
+                  `feature-card ${className}`
+                }
                 initial={{
                   opacity: 0,
                   y: 30,
@@ -157,11 +190,17 @@ function Features() {
                   y: -6,
                 }}
               >
+
+                {/* ===========================================
+                    CARD TOP
+                ============================================ */}
+
                 <div className="feature-card__top">
 
                   <div className="feature-card__icon">
                     <Icon size={21} />
                   </div>
+
 
                   <span className="feature-card__number">
                     {number}
@@ -170,11 +209,16 @@ function Features() {
                 </div>
 
 
+                {/* ===========================================
+                    CONTENT
+                ============================================ */}
+
                 <div className="feature-card__content">
 
                   <h3>
                     {title}
                   </h3>
+
 
                   <p>
                     {description}
@@ -182,6 +226,10 @@ function Features() {
 
                 </div>
 
+
+                {/* ===========================================
+                    FOOTER
+                ============================================ */}
 
                 <div className="feature-card__footer">
 
@@ -192,6 +240,7 @@ function Features() {
                 </div>
 
               </motion.article>
+
             )
           )}
 
