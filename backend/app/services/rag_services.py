@@ -1178,6 +1178,27 @@ Rules:
   "I could not find that information in the document."
 - Keep the answer clear and concise.
 
+Spreadsheet and financial-value rules:
+- Spreadsheet values may be stored using their underlying
+  numeric representation rather than their displayed
+  formatting.
+- When a value clearly represents a percentage or rate,
+  interpret decimal fractions correctly.
+- For example, a rate stored as 0.18 represents 18%,
+  0.09 represents 9%, and 0.05 represents 5%.
+- Convert a decimal rate to percentage form by multiplying
+  it by 100 before displaying the percent sign.
+- Never report 0.18 as 0.18% when the document identifies
+  that value as a percentage/rate.
+- Do not convert ordinary decimal numbers into percentages
+  unless the document context clearly identifies the value
+  as a rate, percentage, GST, VAT, tax rate, discount rate,
+  interest rate, or another percentage-based field.
+- If the document already explicitly provides a percentage
+  such as 18%, preserve it as 18%.
+- Monetary values and ordinary decimal quantities must not
+  be modified by these percentage rules.
+
 PREVIOUS CONVERSATION:
 
 {conversation}
