@@ -1103,6 +1103,116 @@ Current question:
 
         return matches
 
+        # =========================================================
+    # MULTI-DOCUMENT VECTOR SEARCH
+    # =========================================================
+
+    @staticmethod
+    async def search_documents(
+        document_ids: list[str],
+        question: str,
+        history: list | None = None,
+        limit_per_document: int = 3,
+    ) -> list[dict]:
+        """
+        Retrieve relevant chunks from multiple documents.
+
+        Each document is searched independently so that
+        one document cannot dominate the retrieval results.
+        """
+
+        history = history or []
+
+        if not document_ids:
+            return []
+
+        # Remove duplicate document IDs while
+        # preserving their original order.
+        unique_document_ids = list(
+            dict.fromkeys(
+                document_ids
+            )
+        )
+
+        search_query = (
+            RAGService.build_search_query(
+                question=question,
+                history=history,
+            )
+        )
+
+        # Generate the query embedding only once.
+        question_embedding = (
+            await RAGService.create_embedding(
+                search_query
+            )
+        )
+
+        client = QdrantClient(
+            host=RAGService.QDRANT_HOST,
+            port=RAGService.QDRANT_PORT,
+        )
+
+        matches = []
+
+        for document_id in unique_document_ids:
+
+            results = client.query_points(
+                collection_name=(
+                    RAGService.COLLECTION_NAME
+                ),
+                query=question_embedding,
+                query_filter={
+                    "must": [
+                        {
+                            "key": "document_id",
+                            "match": {
+                                "value": (
+                                    document_id
+                                )
+                            },
+                        }
+                    ]
+                },
+                limit=limit_per_document,
+                with_payload=True,
+            )
+
+            for point in results.points:
+
+                if (
+                    point.payload
+                    and "text" in point.payload
+                ):
+
+                    matches.append(
+                        {
+                            "document_id": (
+                                document_id
+                            ),
+                            "text": (
+                                point.payload[
+                                    "text"
+                                ]
+                            ),
+                            "score": (
+                                point.score
+                            ),
+                            "chunk_index": (
+                                point.payload.get(
+                                    "chunk_index"
+                                )
+                            ),
+                            "filename": (
+                                point.payload.get(
+                                    "filename"
+                                )
+                            ),
+                        }
+                    )
+
+        return matches
+
     # =========================================================
     # CONVERSATIONAL RAG
     # =========================================================
@@ -1227,4 +1337,270 @@ ANSWER:
                 chunk["text"]
                 for chunk in chunks
             ],
+        }
+
+
+    # =========================================================
+    # MULTI-DOCUMENT CONVERSATIONAL RAG
+    # =========================================================
+
+    @staticmethod
+    async def answer_multi_document_question(
+        document_ids: list[str],
+        question: str,
+        history: list | None = None,
+    ) -> dict:
+        """
+        Answer a question using context retrieved
+        from multiple selected documents.
+
+        Supports cross-document comparison,
+        synthesis, and reasoning while preserving
+        document identity.
+        """
+
+        history = history or []
+
+        if not document_ids:
+
+            return {
+                "answer": (
+                    "No documents were selected."
+                ),
+                "sources": [],
+            }
+
+        chunks = (
+            await RAGService.search_documents(
+                document_ids=document_ids,
+                question=question,
+                history=history,
+                limit_per_document=3,
+            )
+        )
+
+        if not chunks:
+
+            return {
+                "answer": (
+                    "I could not find relevant "
+                    "information in the selected "
+                    "documents."
+                ),
+                "sources": [],
+            }
+
+
+        # -----------------------------------------------------
+        # GROUP CHUNKS BY DOCUMENT
+        # -----------------------------------------------------
+
+        grouped_chunks = {}
+
+        for chunk in chunks:
+
+            document_id = (
+                chunk["document_id"]
+            )
+
+            if (
+                document_id
+                not in grouped_chunks
+            ):
+
+                grouped_chunks[
+                    document_id
+                ] = {
+                    "filename": (
+                        chunk.get(
+                            "filename"
+                        )
+                        or "Unknown document"
+                    ),
+                    "chunks": [],
+                }
+
+            grouped_chunks[
+                document_id
+            ]["chunks"].append(
+                chunk
+            )
+
+
+        # -----------------------------------------------------
+        # BUILD DOCUMENT-LABELLED CONTEXT
+        # -----------------------------------------------------
+
+        context_sections = []
+
+        for (
+            document_id,
+            document_data
+        ) in grouped_chunks.items():
+
+            filename = (
+                document_data[
+                    "filename"
+                ]
+            )
+
+            document_context = (
+                "\n\n".join(
+                    chunk["text"]
+                    for chunk
+                    in document_data[
+                        "chunks"
+                    ]
+                )
+            )
+
+            context_sections.append(
+                f"""
+==================================================
+DOCUMENT: {filename}
+DOCUMENT ID: {document_id}
+==================================================
+
+{document_context}
+""".strip()
+            )
+
+
+        context = (
+            "\n\n\n".join(
+                context_sections
+            )
+        )
+
+
+        # -----------------------------------------------------
+        # CONVERSATION HISTORY
+        # -----------------------------------------------------
+
+        conversation = (
+            RAGService.build_history_text(
+                history[-6:]
+            )
+        )
+
+        if not conversation:
+
+            conversation = (
+                "No previous conversation."
+            )
+
+
+        # -----------------------------------------------------
+        # PROMPT
+        # -----------------------------------------------------
+
+        prompt = f"""
+You are a multi-document conversational analysis assistant.
+
+The user may ask questions that require comparing,
+contrasting, combining, or reasoning across several
+documents.
+
+Use only the retrieved SELECTED DOCUMENT CONTEXT below.
+
+Each context section is explicitly labelled with its
+document filename and document ID.
+
+Rules:
+- Use only information contained in the selected document
+  context.
+- Do not use outside knowledge.
+- Do not invent facts.
+- Read evidence from all relevant documents before answering.
+- Keep information associated with the correct document.
+- When comparing documents, clearly identify which document
+  each fact comes from.
+- Use filenames when referring to documents whenever useful.
+- Do not combine values from different documents as though
+  they came from one document.
+- Explicitly identify meaningful similarities and
+  differences when the user asks for comparison.
+- If documents conflict, explain the conflict and identify
+  the documents involved.
+- If a selected document does not contain information needed
+  for the comparison, say so rather than inventing a value.
+- If the answer cannot be determined from the retrieved
+  context, respond:
+  "I could not find that information in the selected documents."
+- Keep the answer clear, structured, and concise.
+
+Spreadsheet and financial-value rules:
+- Spreadsheet values may be stored using their underlying
+  numeric representation rather than displayed formatting.
+- When a value clearly represents a percentage or rate,
+  interpret decimal fractions correctly.
+- A rate stored as 0.18 represents 18%.
+- A rate stored as 0.09 represents 9%.
+- A rate stored as 0.05 represents 5%.
+- Convert decimal rates to percentage form by multiplying
+  them by 100 before displaying the percent sign.
+- Never report 0.18 as 0.18% when the field represents a
+  percentage or rate.
+- Do not convert ordinary decimal values into percentages
+  unless the document clearly identifies them as rates,
+  percentages, tax rates, discounts, interest rates,
+  GST, VAT, or similar percentage-based values.
+- Monetary values and ordinary numeric quantities must not
+  be modified by these percentage rules.
+
+PREVIOUS CONVERSATION:
+
+{conversation}
+
+SELECTED DOCUMENT CONTEXT:
+
+{context}
+
+CURRENT USER QUESTION:
+
+{question}
+
+ANSWER:
+"""
+
+        answer = (
+            await RAGService.generate_text(
+                prompt,
+                num_predict=650,
+            )
+        )
+
+
+        # -----------------------------------------------------
+        # SOURCES
+        # -----------------------------------------------------
+
+        sources = []
+
+        for chunk in chunks:
+
+            sources.append(
+                {
+                    "document_id": (
+                        chunk[
+                            "document_id"
+                        ]
+                    ),
+                    "filename": (
+                        chunk.get(
+                            "filename"
+                        )
+                    ),
+                    "text": (
+                        chunk[
+                            "text"
+                        ]
+                    ),
+                }
+            )
+
+
+        return {
+            "answer": answer,
+            "sources": sources,
         }

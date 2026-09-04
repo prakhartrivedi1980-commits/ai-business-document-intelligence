@@ -39,6 +39,28 @@ class DocumentUploadResponse(BaseModel):
         default_factory=dict
     )
 
+# =========================================================
+# MULTIPLE DOCUMENT UPLOAD
+# =========================================================
+
+class MultipleDocumentUploadResponse(BaseModel):
+    """
+    Response returned after uploading
+    multiple documents.
+    """
+
+    total_files: int
+    successful: int
+    failed: int
+
+    documents: list[DocumentUploadResponse] = Field(
+        default_factory=list
+    )
+
+    errors: list[dict[str, str]] = Field(
+        default_factory=list
+    )
+
 
 # =========================================================
 # CHAT
@@ -63,6 +85,43 @@ class DocumentQuestion(BaseModel):
     question: str
 
     history: list[ChatMessage] = Field(
+        default_factory=list
+    )
+
+class DocumentSource(BaseModel):
+    """
+    Retrieved source chunk used for a
+    document intelligence answer.
+    """
+
+    document_id: str | None = None
+    filename: str | None = None
+    text: str
+
+class MultiDocumentQuestion(BaseModel):
+    """
+    Request for asking a question across
+    multiple indexed documents.
+    """
+
+    document_ids: list[str]
+
+    question: str
+
+    history: list[ChatMessage] = Field(
+        default_factory=list
+    )
+
+
+class MultiDocumentAnswer(BaseModel):
+    """
+    RAG answer generated from multiple
+    selected documents.
+    """
+
+    answer: str
+
+    sources: list[DocumentSource] = Field(
         default_factory=list
     )
 

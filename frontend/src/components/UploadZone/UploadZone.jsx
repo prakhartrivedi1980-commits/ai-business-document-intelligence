@@ -3,6 +3,8 @@ import {
   CheckCircle2,
   FileSpreadsheet,
   FileText,
+  Plus,
+  Trash2,
   UploadCloud,
   X,
 } from "lucide-react";
@@ -13,7 +15,7 @@ import "./UploadZone.css";
 
 
 function UploadZone({
-  file,
+  files,
   dragActive,
   uploadLoading,
   fileInputRef,
@@ -22,33 +24,43 @@ function UploadZone({
   handleDragLeave,
   handleDrop,
   handleUpload,
-  handleReset,
+  handleRemoveFile,
+  handleClearFiles,
 }) {
 
   // =========================================================
   // FILE ICON
   // =========================================================
 
-  const getFileIcon = () => {
-    if (!file) {
-      return <UploadCloud size={30} />;
-    }
+  const getFileIcon = (
+    file
+  ) => {
 
-    const extension = file.name
-      .split(".")
-      .pop()
-      ?.toLowerCase();
+    const extension =
+      file.name
+        .split(".")
+        .pop()
+        ?.toLowerCase();
+
 
     if (
       extension === "xlsx" ||
       extension === "csv"
     ) {
+
       return (
-        <FileSpreadsheet size={26} />
+        <FileSpreadsheet
+          size={22}
+        />
       );
     }
 
-    return <FileText size={26} />;
+
+    return (
+      <FileText
+        size={22}
+      />
+    );
   };
 
 
@@ -56,21 +68,87 @@ function UploadZone({
   // FILE SIZE
   // =========================================================
 
-  const formatFileSize = (bytes) => {
+  const formatFileSize = (
+    bytes
+  ) => {
+
     if (!bytes) {
       return "0 KB";
     }
 
-    if (bytes < 1024 * 1024) {
+
+    if (
+      bytes <
+      1024 * 1024
+    ) {
+
       return `${(
         bytes / 1024
       ).toFixed(1)} KB`;
     }
 
+
     return `${(
       bytes /
       (1024 * 1024)
     ).toFixed(1)} MB`;
+  };
+
+
+  // =========================================================
+  // OPEN FILE PICKER
+  // =========================================================
+
+  const openFilePicker = (
+    event
+  ) => {
+
+    event?.stopPropagation();
+
+
+    if (!uploadLoading) {
+
+      fileInputRef.current?.click();
+    }
+  };
+
+
+  // =========================================================
+  // REMOVE FILE
+  // =========================================================
+
+  const removeFile = (
+    event,
+    file
+  ) => {
+
+    event.stopPropagation();
+
+
+    if (!uploadLoading) {
+
+      handleRemoveFile(
+        file
+      );
+    }
+  };
+
+
+  // =========================================================
+  // CLEAR FILES
+  // =========================================================
+
+  const clearFiles = (
+    event
+  ) => {
+
+    event.stopPropagation();
+
+
+    if (!uploadLoading) {
+
+      handleClearFiles();
+    }
   };
 
 
@@ -106,12 +184,14 @@ function UploadZone({
           duration: 0.6,
         }}
       >
+
         <span className="premium-upload__eyebrow">
           START ANALYZING
         </span>
 
+
         <h2>
-          Bring your document.
+          Bring your documents.
           <br />
 
           <span>
@@ -119,11 +199,13 @@ function UploadZone({
           </span>
         </h2>
 
+
         <p>
-          Upload a supported document and turn
-          it into searchable, conversational
-          knowledge.
+          Upload one or multiple supported
+          documents and turn them into
+          searchable, conversational knowledge.
         </p>
+
       </motion.div>
 
 
@@ -161,43 +243,58 @@ function UploadZone({
               ? "premium-drop-zone--active"
               : ""
           } ${
-            file
+            files.length > 0
               ? "premium-drop-zone--selected"
               : ""
           }`}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
-          onClick={() => {
-            if (!uploadLoading) {
-              fileInputRef.current?.click();
-            }
-          }}
+          onDragOver={
+            handleDragOver
+          }
+          onDragLeave={
+            handleDragLeave
+          }
+          onDrop={
+            handleDrop
+          }
+          onClick={
+            openFilePicker
+          }
         >
 
           <input
-            ref={fileInputRef}
+            ref={
+              fileInputRef
+            }
             type="file"
+            multiple
             accept=".pdf,.docx,.txt,.xlsx,.csv"
-            onChange={handleFileChange}
+            onChange={
+              handleFileChange
+            }
             className="hidden-file-input"
           />
 
 
-          <div className="premium-drop-zone__glow" />
+          <div
+            className="premium-drop-zone__glow"
+          />
 
 
           {/* =================================================
-              NO FILE SELECTED
+              NO FILES SELECTED
           ================================================== */}
 
-          {!file ? (
+          {files.length === 0 ? (
             <>
 
               <motion.div
                 className="premium-drop-zone__icon"
                 animate={{
-                  y: [0, -5, 0],
+                  y: [
+                    0,
+                    -5,
+                    0,
+                  ],
                 }}
                 transition={{
                   duration: 2.4,
@@ -205,17 +302,23 @@ function UploadZone({
                   ease: "easeInOut",
                 }}
               >
-                <UploadCloud size={30} />
+
+                <UploadCloud
+                  size={30}
+                />
+
               </motion.div>
 
 
               <h3>
-                Drop your document here
+                Drop your documents here
               </h3>
 
 
               <p>
-                Drag & drop or{" "}
+                Drag & drop one or multiple
+                files or{" "}
+
                 <strong>
                   click to browse
                 </strong>
@@ -226,34 +329,51 @@ function UploadZone({
                   SUPPORTED FORMATS
               ============================================== */}
 
-              <div className="premium-drop-zone__formats">
+              <div
+                className="premium-drop-zone__formats"
+              >
 
                 <span>
-                  <FileText size={14} />
+                  <FileText
+                    size={14}
+                  />
+
                   PDF
                 </span>
 
 
                 <span>
-                  <FileText size={14} />
+                  <FileText
+                    size={14}
+                  />
+
                   DOCX
                 </span>
 
 
                 <span>
-                  <FileText size={14} />
+                  <FileText
+                    size={14}
+                  />
+
                   TXT
                 </span>
 
 
                 <span>
-                  <FileSpreadsheet size={14} />
+                  <FileSpreadsheet
+                    size={14}
+                  />
+
                   XLSX
                 </span>
 
 
                 <span>
-                  <FileSpreadsheet size={14} />
+                  <FileSpreadsheet
+                    size={14}
+                  />
+
                   CSV
                 </span>
 
@@ -264,39 +384,198 @@ function UploadZone({
           ) : (
 
             /* ===============================================
-               FILE SELECTED
+               MULTIPLE FILES SELECTED
             ================================================ */
 
-            <div className="premium-selected-file">
+            <div
+              className="premium-selected-files"
+              onClick={(
+                event
+              ) =>
+                event.stopPropagation()
+              }
+            >
 
-              <div className="premium-selected-file__icon">
-                {getFileIcon()}
+              {/* =============================================
+                  SELECTED HEADER
+              ============================================== */}
+
+              <div
+                className="premium-selected-files__header"
+              >
+
+                <div
+                  className="premium-selected-files__title"
+                >
+
+                  <div
+                    className="premium-selected-files__status-icon"
+                  >
+                    <CheckCircle2
+                      size={18}
+                    />
+                  </div>
+
+
+                  <div>
+                    <span>
+                      READY TO ANALYZE
+                    </span>
+
+                    <strong>
+                      {files.length}{" "}
+                      {files.length === 1
+                        ? "document"
+                        : "documents"}{" "}
+                      selected
+                    </strong>
+                  </div>
+
+                </div>
+
+
+                <button
+                  type="button"
+                  className="premium-selected-files__clear"
+                  onClick={
+                    clearFiles
+                  }
+                  disabled={
+                    uploadLoading
+                  }
+                >
+                  <Trash2
+                    size={14}
+                  />
+
+                  Clear all
+                </button>
+
               </div>
 
 
-              <div className="premium-selected-file__info">
+              {/* =============================================
+                  FILE LIST
+              ============================================== */}
 
-                <span>
-                  READY TO ANALYZE
-                </span>
+              <div
+                className="premium-selected-files__list"
+              >
 
-                <strong>
-                  {file.name}
-                </strong>
+                {files.map(
+                  (
+                    file,
+                    index
+                  ) => (
 
-                <p>
-                  {formatFileSize(
-                    file.size
-                  )}
-                </p>
+                    <motion.div
+                      className="premium-selected-file"
+                      key={
+                        `${file.name}-${file.size}-${file.lastModified}`
+                      }
+                      initial={{
+                        opacity: 0,
+                        y: 8,
+                      }}
+                      animate={{
+                        opacity: 1,
+                        y: 0,
+                      }}
+                      transition={{
+                        duration: 0.25,
+                        delay:
+                          Math.min(
+                            index * 0.04,
+                            0.2
+                          ),
+                      }}
+                    >
+
+                      <div
+                        className="premium-selected-file__icon"
+                      >
+                        {getFileIcon(
+                          file
+                        )}
+                      </div>
+
+
+                      <div
+                        className="premium-selected-file__info"
+                      >
+
+                        <strong>
+                          {file.name}
+                        </strong>
+
+
+                        <p>
+                          {formatFileSize(
+                            file.size
+                          )}
+                        </p>
+
+                      </div>
+
+
+                      <div
+                        className="premium-selected-file__ready"
+                      >
+                        Ready
+                      </div>
+
+
+                      <button
+                        type="button"
+                        className="premium-selected-file__remove"
+                        aria-label={`Remove ${file.name}`}
+                        onClick={(
+                          event
+                        ) =>
+                          removeFile(
+                            event,
+                            file
+                          )
+                        }
+                        disabled={
+                          uploadLoading
+                        }
+                      >
+                        <X
+                          size={16}
+                        />
+                      </button>
+
+                    </motion.div>
+
+                  )
+                )}
 
               </div>
 
 
-              <CheckCircle2
-                className="premium-selected-file__check"
-                size={22}
-              />
+              {/* =============================================
+                  ADD MORE
+              ============================================== */}
+
+              <button
+                type="button"
+                className="premium-selected-files__add"
+                onClick={
+                  openFilePicker
+                }
+                disabled={
+                  uploadLoading
+                }
+              >
+
+                <Plus
+                  size={16}
+                />
+
+                Add more documents
+
+              </button>
 
             </div>
 
@@ -309,7 +588,8 @@ function UploadZone({
             FILE ACTIONS
         ==================================================== */}
 
-        {file && (
+        {files.length > 0 && (
+
           <motion.div
             className="premium-upload__actions"
             initial={{
@@ -325,39 +605,64 @@ function UploadZone({
             <button
               type="button"
               className="premium-upload__remove"
-              onClick={handleReset}
-              disabled={uploadLoading}
+              onClick={
+                handleClearFiles
+              }
+              disabled={
+                uploadLoading
+              }
             >
-              <X size={16} />
 
-              Remove
+              <X
+                size={16}
+              />
+
+              Clear selection
+
             </button>
 
 
             <button
               type="button"
               className="premium-upload__analyze"
-              onClick={handleUpload}
-              disabled={uploadLoading}
+              onClick={
+                handleUpload
+              }
+              disabled={
+                uploadLoading
+              }
             >
 
               {uploadLoading ? (
                 <>
-                  <span className="premium-upload__spinner" />
+
+                  <span
+                    className="premium-upload__spinner"
+                  />
 
                   Building intelligence...
+
                 </>
+
               ) : (
                 <>
-                  Analyze document
 
-                  <ArrowRight size={17} />
+                  Analyze{" "}
+                  {files.length === 1
+                    ? "document"
+                    : `${files.length} documents`}
+
+                  <ArrowRight
+                    size={17}
+                  />
+
                 </>
               )}
 
             </button>
 
           </motion.div>
+
         )}
 
 
@@ -366,19 +671,26 @@ function UploadZone({
         ==================================================== */}
 
         {uploadLoading && (
-          <div className="premium-processing">
 
-            <div className="premium-processing__line">
+          <div
+            className="premium-processing"
+          >
+
+            <div
+              className="premium-processing__line"
+            >
               <span />
             </div>
 
+
             <p>
               Extracting content, generating
-              embeddings and building your document
-              knowledge index...
+              embeddings and building knowledge
+              indexes for your documents...
             </p>
 
           </div>
+
         )}
 
 
@@ -386,20 +698,26 @@ function UploadZone({
             FOOTER
         ==================================================== */}
 
-        <div className="premium-upload__footer">
+        <div
+          className="premium-upload__footer"
+        >
 
           <span>
-            <CheckCircle2 size={13} />
+            <CheckCircle2
+              size={13}
+            />
 
             PDF, DOCX, TXT, XLSX & CSV
           </span>
 
 
-          <span className="premium-upload__footer-dot" />
+          <span
+            className="premium-upload__footer-dot"
+          />
 
 
           <span>
-            Your document stays in your AI workspace
+            Multiple document upload supported
           </span>
 
         </div>

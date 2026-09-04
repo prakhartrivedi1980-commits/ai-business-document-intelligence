@@ -1,3 +1,5 @@
+from typing import Annotated
+
 from fastapi import (
     FastAPI,
     File,
@@ -12,8 +14,11 @@ from app.services.invoice_services import InvoiceService
 
 from app.schemas.document import (
     DocumentUploadResponse,
+    MultipleDocumentUploadResponse,
     DocumentQuestion,
     DocumentAnswer,
+    MultiDocumentQuestion,
+    MultiDocumentAnswer,
     DocumentSummaryResponse,
     DocumentKeyPointsResponse,
     InvoiceExtractionResponse,
@@ -126,6 +131,118 @@ async def upload_document(
 
 
 # =========================================================
+# MULTIPLE DOCUMENT UPLOAD
+# =========================================================
+
+@app.post(
+    "/documents/upload-multiple",
+    response_model=MultipleDocumentUploadResponse,
+)
+async def upload_multiple_documents(
+    files: Annotated[
+        list[UploadFile],
+        File(
+            json_schema_extra={
+                "items": {
+                    "type": "string",
+                    "format": "binary",
+                }
+            }
+        ),
+    ],
+):
+    """
+    Upload, extract, and index multiple documents.
+
+    Supported formats:
+    - PDF
+    - DOCX
+    - TXT
+    - XLSX
+    - CSV
+
+    Each document is processed independently.
+
+    If one document fails, the remaining
+    documents will still be processed.
+    """
+
+    documents = []
+    errors = []
+
+    # -----------------------------------------------------
+    # PROCESS FILES
+    # -----------------------------------------------------
+
+    for file in files:
+
+        try:
+
+            # -------------------------------------------------
+            # EXTRACT
+            # -------------------------------------------------
+
+            payload = (
+                await DocumentService.extract_document(
+                    file
+                )
+            )
+
+            # -------------------------------------------------
+            # INDEX
+            # -------------------------------------------------
+
+            document_id = (
+                await RAGService.store_document(
+                    text=payload.text,
+                    filename=payload.filename,
+                )
+            )
+
+            # -------------------------------------------------
+            # SUCCESS
+            # -------------------------------------------------
+
+            documents.append(
+                {
+                    "document_id": document_id,
+                    "filename": payload.filename,
+                    "file_type": payload.file_type,
+                    "status": "ready",
+                    "metadata": payload.metadata,
+                }
+            )
+
+        except Exception as exc:
+
+            # -------------------------------------------------
+            # FAILURE
+            # -------------------------------------------------
+
+            errors.append(
+                {
+                    "filename": (
+                        file.filename
+                        or "unknown"
+                    ),
+                    "error": str(exc),
+                }
+            )
+
+    # -----------------------------------------------------
+    # RESPONSE
+    # -----------------------------------------------------
+
+    return {
+        "total_files": len(files),
+        "successful": len(documents),
+        "failed": len(errors),
+        "documents": documents,
+        "errors": errors,
+    }
+
+
+# =========================================================
 # DOCUMENT CHAT
 # =========================================================
 
@@ -151,7 +268,41 @@ async def ask_document(
 
     return result
 
+# =========================================================
+# MULTI-DOCUMENT CHAT
+# =========================================================
 
+@app.post(
+    "/ask-documents",
+    response_model=MultiDocumentAnswer,
+)
+async def ask_documents(
+    request: MultiDocumentQuestion,
+):
+    """
+    Ask a conversation-aware question across
+    multiple indexed documents.
+
+    Supports cross-document comparison,
+    synthesis, and reasoning.
+    """
+
+    result = (
+        await RAGService
+        .answer_multi_document_question(
+            document_ids=(
+                request.document_ids
+            ),
+            question=(
+                request.question
+            ),
+            history=(
+                request.history
+            ),
+        )
+    )
+
+    return result
 # =========================================================
 # DOCUMENT SUMMARY
 # =========================================================

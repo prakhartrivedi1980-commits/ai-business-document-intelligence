@@ -25,17 +25,66 @@ const API_BASE_URL =
 function App() {
 
   // =========================================================
-  // DOCUMENT STATE
+  // SELECTED FILES
   // =========================================================
 
-  const [file, setFile] =
-    useState(null);
+  const [files, setFiles] =
+    useState([]);
+
+
+  // =========================================================
+  // UPLOADED DOCUMENTS
+  // =========================================================
+
+  const [documents, setDocuments] =
+    useState([]);
+
+
+  // =========================================================
+  // ACTIVE DOCUMENT
+  // =========================================================
 
   const [documentInfo, setDocumentInfo] =
     useState(null);
 
   const [documentId, setDocumentId] =
     useState(null);
+
+
+  // =========================================================
+  // PER-DOCUMENT AI RESULTS
+  // =========================================================
+
+  /*
+   * AI results are stored separately for
+   * every uploaded document.
+   *
+   * Example:
+   *
+   * {
+   *   "document-id-1": {
+   *     summary: "...",
+   *     keyPoints: [...],
+   *     invoice: {...}
+   *   },
+   *
+   *   "document-id-2": {
+   *     summary: "...",
+   *     keyPoints: [...],
+   *     invoice: {...}
+   *   }
+   * }
+   */
+
+  const [
+    documentResults,
+    setDocumentResults,
+  ] = useState({});
+
+
+  // =========================================================
+  // UPLOAD
+  // =========================================================
 
   const [uploadLoading, setUploadLoading] =
     useState(false);
@@ -48,35 +97,16 @@ function App() {
 
 
   // =========================================================
-  // SUMMARY
+  // AI LOADING STATES
   // =========================================================
-
-  const [summary, setSummary] =
-    useState("");
 
   const [summaryLoading, setSummaryLoading] =
     useState(false);
-
-
-  // =========================================================
-  // KEY POINTS
-  // =========================================================
-
-  const [keyPoints, setKeyPoints] =
-    useState([]);
 
   const [
     keyPointsLoading,
     setKeyPointsLoading,
   ] = useState(false);
-
-
-  // =========================================================
-  // INVOICE INTELLIGENCE
-  // =========================================================
-
-  const [invoice, setInvoice] =
-    useState(null);
 
   const [
     invoiceLoading,
@@ -85,8 +115,17 @@ function App() {
 
 
   // =========================================================
-  // RAG CHAT
+  // SHARED MULTI-DOCUMENT CHAT
   // =========================================================
+
+  /*
+   * Chat belongs to the complete uploaded
+   * document collection, not to the active
+   * document.
+   *
+   * Therefore switching documents must NOT
+   * clear these states.
+   */
 
   const [question, setQuestion] =
     useState("");
@@ -110,32 +149,92 @@ function App() {
 
 
   // =========================================================
-  // RESET DOCUMENT RESULTS
+  // CURRENT DOCUMENT AI RESULTS
   // =========================================================
 
-  const resetDocumentResults = () => {
+  /*
+   * Whenever documentId changes, these values
+   * automatically point to that document's
+   * cached AI results.
+   */
+
+  const currentDocumentResults =
+    documentId
+      ? documentResults[documentId] || {}
+      : {};
+
+
+  const summary =
+    currentDocumentResults.summary || "";
+
+
+  const keyPoints =
+    currentDocumentResults.keyPoints || [];
+
+
+  const invoice =
+    currentDocumentResults.invoice || null;
+
+
+  // =========================================================
+  // UPDATE ONE DOCUMENT'S AI RESULTS
+  // =========================================================
+
+  const updateDocumentResults = (
+    targetDocumentId,
+    updates
+  ) => {
+
+    if (!targetDocumentId) {
+      return;
+    }
+
+
+    setDocumentResults(
+      (previousResults) => ({
+        ...previousResults,
+
+        [targetDocumentId]: {
+          ...(
+            previousResults[
+              targetDocumentId
+            ] || {}
+          ),
+
+          ...updates,
+        },
+      })
+    );
+  };
+
+
+  // =========================================================
+  // RESET COMPLETE DOCUMENT WORKSPACE
+  // =========================================================
+
+  const resetDocumentWorkspace = () => {
 
     setDocumentInfo(null);
 
     setDocumentId(null);
 
+    setDocumentResults({});
 
-    // AI results
-
-    setSummary("");
-
-    setKeyPoints([]);
-
-    setInvoice(null);
-
-
-    // Chat
 
     setQuestion("");
 
     setMessages([]);
 
     setChatError("");
+
+
+    setSummaryLoading(false);
+
+    setKeyPointsLoading(false);
+
+    setInvoiceLoading(false);
+
+    setChatLoading(false);
   };
 
 
@@ -143,11 +242,14 @@ function App() {
   // FILE VALIDATION
   // =========================================================
 
-  const validateAndSetFile = (
-    selectedFile
+  const validateAndSetFiles = (
+    selectedFiles
   ) => {
 
-    if (!selectedFile) {
+    if (
+      !selectedFiles ||
+      selectedFiles.length === 0
+    ) {
       return;
     }
 
@@ -161,40 +263,112 @@ function App() {
     ];
 
 
-    const filename =
-      selectedFile.name.toLowerCase();
-
-
-    const isSupported =
-      allowedExtensions.some(
-        (extension) =>
-          filename.endsWith(
-            extension
-          )
+    const incomingFiles =
+      Array.from(
+        selectedFiles
       );
 
 
-    if (!isSupported) {
+    const validFiles = [];
+
+    const invalidFiles = [];
+
+
+    incomingFiles.forEach(
+      (selectedFile) => {
+
+        const filename =
+          selectedFile.name
+            .toLowerCase();
+
+
+        const isSupported =
+          allowedExtensions.some(
+            (extension) =>
+              filename.endsWith(
+                extension
+              )
+          );
+
+
+        if (isSupported) {
+
+          validFiles.push(
+            selectedFile
+          );
+
+        } else {
+
+          invalidFiles.push(
+            selectedFile.name
+          );
+        }
+      }
+    );
+
+
+    // -------------------------------------------------------
+    // INVALID FILES
+    // -------------------------------------------------------
+
+    if (
+      invalidFiles.length > 0
+    ) {
 
       setError(
-        "Unsupported file type. Please upload a PDF, DOCX, TXT, XLSX, or CSV document."
+        `Unsupported file type: ${invalidFiles.join(
+          ", "
+        )}. Please upload PDF, DOCX, TXT, XLSX, or CSV documents.`
       );
 
-      setFile(null);
+    } else {
 
-      resetDocumentResults();
-
-      return;
+      setError("");
     }
 
 
-    setFile(
-      selectedFile
-    );
+    // -------------------------------------------------------
+    // ADD VALID FILES
+    // -------------------------------------------------------
 
-    setError("");
+    if (
+      validFiles.length > 0
+    ) {
 
-    resetDocumentResults();
+      setFiles(
+        (previousFiles) => {
+
+          const existingKeys =
+            new Set(
+              previousFiles.map(
+                (file) =>
+                  `${file.name}-${file.size}-${file.lastModified}`
+              )
+            );
+
+
+          const newFiles =
+            validFiles.filter(
+              (file) => {
+
+                const key =
+                  `${file.name}-${file.size}-${file.lastModified}`;
+
+
+                return !existingKeys.has(
+                  key
+                );
+              }
+            );
+
+
+          return [
+            ...previousFiles,
+            ...newFiles,
+          ];
+        }
+      );
+    }
   };
 
 
@@ -206,12 +380,17 @@ function App() {
     event
   ) => {
 
-    const selectedFile =
-      event.target.files?.[0];
-
-    validateAndSetFile(
-      selectedFile
+    validateAndSetFiles(
+      event.target.files
     );
+
+
+    /*
+     * Allows the same file to be selected
+     * again after removing it.
+     */
+
+    event.target.value = "";
   };
 
 
@@ -230,6 +409,7 @@ function App() {
 
 
   const handleDragLeave = () => {
+
     setDragActive(false);
   };
 
@@ -243,112 +423,340 @@ function App() {
     setDragActive(false);
 
 
-    const droppedFile =
-      event.dataTransfer.files?.[0];
-
-
-    validateAndSetFile(
-      droppedFile
+    validateAndSetFiles(
+      event.dataTransfer.files
     );
   };
 
 
   // =========================================================
-  // UPLOAD + INDEX DOCUMENT
+  // REMOVE ONE SELECTED FILE
   // =========================================================
 
-  const handleUpload = async () => {
+  const handleRemoveFile = (
+    fileToRemove
+  ) => {
+
+    setFiles(
+      (previousFiles) =>
+        previousFiles.filter(
+          (file) =>
+            !(
+              file.name ===
+                fileToRemove.name &&
+              file.size ===
+                fileToRemove.size &&
+              file.lastModified ===
+                fileToRemove.lastModified
+            )
+        )
+    );
+
+
+    setError("");
+  };
+
+
+  // =========================================================
+  // CLEAR SELECTED FILES
+  // =========================================================
+
+  const handleClearFiles = () => {
+
+    setFiles([]);
+
+    setError("");
+
 
     if (
-      !file ||
-      uploadLoading
+      fileInputRef.current
+    ) {
+
+      fileInputRef.current.value =
+        "";
+    }
+  };
+
+
+  // =========================================================
+  // UPLOAD + INDEX MULTIPLE DOCUMENTS
+  // =========================================================
+
+  const handleUpload =
+    async () => {
+
+      if (
+        files.length === 0 ||
+        uploadLoading
+      ) {
+        return;
+      }
+
+
+      const formData =
+        new FormData();
+
+
+      files.forEach(
+        (file) => {
+
+          formData.append(
+            "files",
+            file
+          );
+        }
+      );
+
+
+      try {
+
+        setUploadLoading(true);
+
+        setError("");
+
+
+        const response =
+          await fetch(
+            `${API_BASE_URL}/documents/upload-multiple`,
+            {
+              method: "POST",
+              body: formData,
+            }
+          );
+
+
+        if (!response.ok) {
+
+          throw new Error(
+            `Upload failed with status ${response.status}`
+          );
+        }
+
+
+        const data =
+          await response.json();
+
+
+        console.log(
+          "Multiple document upload response:",
+          data
+        );
+
+
+        // ---------------------------------------------------
+        // SUCCESSFUL DOCUMENTS
+        // ---------------------------------------------------
+
+        const uploadedDocuments =
+          data.documents || [];
+
+
+        setDocuments(
+          uploadedDocuments
+        );
+
+
+        /*
+         * A new upload batch creates a
+         * completely new document workspace.
+         */
+
+        setDocumentResults({});
+
+        setMessages([]);
+
+        setQuestion("");
+
+        setChatError("");
+
+
+        // ---------------------------------------------------
+        // PARTIAL FAILURES
+        // ---------------------------------------------------
+
+        if (
+          data.failed > 0
+        ) {
+
+          const failedFiles =
+            (data.errors || [])
+              .map(
+                (item) =>
+                  item.filename
+              )
+              .join(", ");
+
+
+          setError(
+            `${data.failed} document${
+              data.failed === 1
+                ? ""
+                : "s"
+            } failed to process${
+              failedFiles
+                ? `: ${failedFiles}`
+                : "."
+            }`
+          );
+        }
+
+
+        // ---------------------------------------------------
+        // SELECT FIRST SUCCESSFUL DOCUMENT
+        // ---------------------------------------------------
+
+        if (
+          uploadedDocuments.length > 0
+        ) {
+
+          const firstDocument =
+            uploadedDocuments[0];
+
+
+          setDocumentId(
+            firstDocument.document_id
+          );
+
+
+          setDocumentInfo({
+            filename:
+              firstDocument.filename,
+
+            fileType:
+              firstDocument.file_type,
+
+            metadata:
+              firstDocument.metadata ||
+              {},
+
+            status:
+              firstDocument.status,
+          });
+
+
+          // Clear local file selection.
+
+          setFiles([]);
+
+
+          if (
+            fileInputRef.current
+          ) {
+
+            fileInputRef.current.value =
+              "";
+          }
+
+        } else {
+
+          // -------------------------------------------------
+          // ALL FILES FAILED
+          // -------------------------------------------------
+
+          setDocumentId(null);
+
+          setDocumentInfo(null);
+
+
+          if (
+            data.errors?.length
+          ) {
+
+            setError(
+              data.errors
+                .map(
+                  (item) =>
+                    `${item.filename}: ${item.error}`
+                )
+                .join(" | ")
+            );
+
+          } else {
+
+            setError(
+              "Unable to process the selected documents."
+            );
+          }
+        }
+
+      } catch (
+        uploadError
+      ) {
+
+        console.error(
+          "Upload error:",
+          uploadError
+        );
+
+
+        setError(
+          "Unable to process the documents. Make sure FastAPI, Ollama, and Qdrant are running."
+        );
+
+      } finally {
+
+        setUploadLoading(false);
+      }
+    };
+
+
+  // =========================================================
+  // SELECT ACTIVE DOCUMENT
+  // =========================================================
+
+  const handleSelectDocument = (
+    document
+  ) => {
+
+    if (
+      !document ||
+      document.document_id ===
+        documentId
     ) {
       return;
     }
 
 
-    const formData =
-      new FormData();
-
-
-    formData.append(
-      "file",
-      file
+    setDocumentId(
+      document.document_id
     );
 
 
-    try {
+    setDocumentInfo({
+      filename:
+        document.filename,
 
-      setUploadLoading(true);
+      fileType:
+        document.file_type,
 
-      setError("");
+      metadata:
+        document.metadata || {},
 
-      resetDocumentResults();
-
-
-      const response =
-        await fetch(
-          `${API_BASE_URL}/documents/upload`,
-          {
-            method: "POST",
-            body: formData,
-          }
-        );
+      status:
+        document.status,
+    });
 
 
-      if (!response.ok) {
-
-        throw new Error(
-          `Upload failed with status ${response.status}`
-        );
-      }
-
-
-      const data =
-        await response.json();
-
-
-      console.log(
-        "Document upload response:",
-        data
-      );
-
-
-      setDocumentId(
-        data.document_id
-      );
+    /*
+     * IMPORTANT:
+     *
+     * We intentionally DO NOT clear:
+     *
+     * - summary
+     * - key points
+     * - invoice
+     * - messages
+     * - question
+     * - chat error
+     *
+     * Summary/key points/invoice are cached
+     * separately by document ID.
+     *
+     * Chat belongs to all uploaded documents.
+     */
 
 
-      setDocumentInfo({
-        filename:
-          data.filename,
-
-        fileType:
-          data.file_type,
-
-        metadata:
-          data.metadata || {},
-
-        status:
-          data.status,
-      });
-
-    } catch (uploadError) {
-
-      console.error(
-        "Upload error:",
-        uploadError
-      );
-
-
-      setError(
-        "Unable to process the document. Make sure FastAPI, Ollama, and Qdrant are running."
-      );
-
-    } finally {
-
-      setUploadLoading(false);
-    }
+    setError("");
   };
 
 
@@ -367,6 +775,19 @@ function App() {
       }
 
 
+      /*
+       * Capture the ID now.
+       *
+       * This ensures the result is stored
+       * against the correct document even if
+       * the active document changes while the
+       * request is running.
+       */
+
+      const targetDocumentId =
+        documentId;
+
+
       try {
 
         setSummaryLoading(true);
@@ -376,7 +797,7 @@ function App() {
 
         const response =
           await fetch(
-            `${API_BASE_URL}/documents/${documentId}/summary`,
+            `${API_BASE_URL}/documents/${targetDocumentId}/summary`,
             {
               method: "POST",
             }
@@ -395,11 +816,17 @@ function App() {
           await response.json();
 
 
-        setSummary(
-          data.summary || ""
+        updateDocumentResults(
+          targetDocumentId,
+          {
+            summary:
+              data.summary || "",
+          }
         );
 
-      } catch (summaryError) {
+      } catch (
+        summaryError
+      ) {
 
         console.error(
           "Summary error:",
@@ -433,6 +860,10 @@ function App() {
       }
 
 
+      const targetDocumentId =
+        documentId;
+
+
       try {
 
         setKeyPointsLoading(true);
@@ -442,7 +873,7 @@ function App() {
 
         const response =
           await fetch(
-            `${API_BASE_URL}/documents/${documentId}/key-points`,
+            `${API_BASE_URL}/documents/${targetDocumentId}/key-points`,
             {
               method: "POST",
             }
@@ -461,8 +892,12 @@ function App() {
           await response.json();
 
 
-        setKeyPoints(
-          data.key_points || []
+        updateDocumentResults(
+          targetDocumentId,
+          {
+            keyPoints:
+              data.key_points || [],
+          }
         );
 
       } catch (
@@ -501,6 +936,10 @@ function App() {
       }
 
 
+      const targetDocumentId =
+        documentId;
+
+
       try {
 
         setInvoiceLoading(true);
@@ -510,7 +949,7 @@ function App() {
 
         const response =
           await fetch(
-            `${API_BASE_URL}/documents/${documentId}/invoice`,
+            `${API_BASE_URL}/documents/${targetDocumentId}/invoice`,
             {
               method: "POST",
             }
@@ -535,8 +974,12 @@ function App() {
         );
 
 
-        setInvoice(
-          data.invoice || null
+        updateDocumentResults(
+          targetDocumentId,
+          {
+            invoice:
+              data.invoice || null,
+          }
         );
 
       } catch (
@@ -561,7 +1004,7 @@ function App() {
 
 
   // =========================================================
-  // CONVERSATION-AWARE RAG CHAT
+  // MULTI-DOCUMENT CONVERSATION-AWARE RAG CHAT
   // =========================================================
 
   const handleAskQuestion =
@@ -573,17 +1016,41 @@ function App() {
 
       if (
         !trimmedQuestion ||
-        !documentId ||
+        documents.length === 0 ||
         chatLoading
       ) {
         return;
       }
 
 
-      /*
-       * Send only messages that already
-       * existed before the current question.
-       */
+      // -----------------------------------------------------
+      // COLLECT ALL UPLOADED DOCUMENT IDS
+      // -----------------------------------------------------
+
+      const documentIds =
+        documents
+          .map(
+            (document) =>
+              document.document_id
+          )
+          .filter(Boolean);
+
+
+      if (
+        documentIds.length === 0
+      ) {
+
+        setChatError(
+          "No uploaded documents are available for chat."
+        );
+
+        return;
+      }
+
+
+      // -----------------------------------------------------
+      // CONVERSATION HISTORY
+      // -----------------------------------------------------
 
       const conversationHistory =
         messages.map(
@@ -597,17 +1064,20 @@ function App() {
         );
 
 
+      // -----------------------------------------------------
+      // USER MESSAGE
+      // -----------------------------------------------------
+
       const userMessage = {
         role: "user",
+
         content:
           trimmedQuestion,
       };
 
 
       setMessages(
-        (
-          previousMessages
-        ) => [
+        (previousMessages) => [
           ...previousMessages,
           userMessage,
         ]
@@ -623,9 +1093,13 @@ function App() {
 
       try {
 
+        // ---------------------------------------------------
+        // MULTI-DOCUMENT RAG
+        // ---------------------------------------------------
+
         const response =
           await fetch(
-            `${API_BASE_URL}/ask-document`,
+            `${API_BASE_URL}/ask-documents`,
             {
               method: "POST",
 
@@ -636,8 +1110,8 @@ function App() {
 
               body:
                 JSON.stringify({
-                  document_id:
-                    documentId,
+                  document_ids:
+                    documentIds,
 
                   question:
                     trimmedQuestion,
@@ -661,21 +1135,24 @@ function App() {
           await response.json();
 
 
+        /*
+         * We intentionally do NOT store
+         * data.sources.
+         *
+         * Retrieved sources have been removed
+         * from the frontend chat interface.
+         */
+
         const assistantMessage = {
           role: "assistant",
 
           content:
             data.answer,
-
-          sources:
-            data.sources || [],
         };
 
 
         setMessages(
-          (
-            previousMessages
-          ) => [
+          (previousMessages) => [
             ...previousMessages,
             assistantMessage,
           ]
@@ -686,13 +1163,13 @@ function App() {
       ) {
 
         console.error(
-          "Chat error:",
+          "Multi-document chat error:",
           chatRequestError
         );
 
 
         setChatError(
-          "Unable to answer the question. Please try again."
+          "Unable to answer the question across the uploaded documents. Please try again."
         );
 
       } finally {
@@ -727,20 +1204,15 @@ function App() {
 
   const handleReset = () => {
 
-    setFile(null);
+    setFiles([]);
+
+    setDocuments([]);
 
 
-    resetDocumentResults();
+    resetDocumentWorkspace();
 
 
-    setSummaryLoading(false);
-
-    setKeyPointsLoading(false);
-
-    setInvoiceLoading(false);
-
-    setChatLoading(false);
-
+    setUploadLoading(false);
 
     setError("");
 
@@ -750,6 +1222,7 @@ function App() {
     if (
       fileInputRef.current
     ) {
+
       fileInputRef.current.value =
         "";
     }
@@ -784,8 +1257,8 @@ function App() {
           {!documentInfo && (
 
             <UploadZone
-              file={
-                file
+              files={
+                files
               }
 
               dragActive={
@@ -820,6 +1293,14 @@ function App() {
                 handleUpload
               }
 
+              handleRemoveFile={
+                handleRemoveFile
+              }
+
+              handleClearFiles={
+                handleClearFiles
+              }
+
               handleReset={
                 handleReset
               }
@@ -852,6 +1333,74 @@ function App() {
             documentId && (
 
               <section className="workspace">
+
+
+                {/* ===========================================
+                    MULTIPLE DOCUMENT SELECTOR
+                ============================================ */}
+
+                {documents.length > 1 && (
+
+                  <div className="document-selector">
+
+                    <div className="document-selector__header">
+
+                      <span>
+                        DOCUMENTS
+                      </span>
+
+                      <strong>
+                        {documents.length} uploaded
+                      </strong>
+
+                    </div>
+
+
+                    <div className="document-selector__list">
+
+                      {documents.map(
+                        (document) => (
+
+                          <button
+                            type="button"
+                            key={
+                              document.document_id
+                            }
+                            className={`document-selector__item ${
+                              document.document_id ===
+                              documentId
+                                ? "document-selector__item--active"
+                                : ""
+                            }`}
+                            onClick={() =>
+                              handleSelectDocument(
+                                document
+                              )
+                            }
+                          >
+
+                            <span className="document-selector__name">
+                              {
+                                document.filename
+                              }
+                            </span>
+
+                            <span className="document-selector__type">
+                              {
+                                document.file_type
+                              }
+                            </span>
+
+                          </button>
+
+                        )
+                      )}
+
+                    </div>
+
+                  </div>
+
+                )}
 
 
                 {/* ===========================================
@@ -986,7 +1535,7 @@ function App() {
 
 
                 {/* ===========================================
-                    DOCUMENT CHAT
+                    SHARED MULTI-DOCUMENT CHAT
                 ============================================ */}
 
                 <Chat
